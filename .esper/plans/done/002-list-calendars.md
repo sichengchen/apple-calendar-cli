@@ -1,14 +1,14 @@
 ---
-id: 002
+id: 2
 title: List calendars command
-status: pending
+status: done
 type: feature
 priority: 2
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # List calendars command
 
 ## Context
@@ -36,3 +36,12 @@ Depends on plan 001 (project scaffolding). EventKit provides `EKEventStore.calen
 - Run: `.build/debug/apple-calendar-cli list-calendars --json`
 - Expected: JSON array of calendar objects
 - Edge cases: No calendars, permission denied, calendar access not yet prompted
+
+## Progress
+- Implemented CalendarService with EKEventStore wrapper, requestAccess, listCalendars, fetchEvents, save, delete
+- Implemented CalendarInfo model with Codable conformance, human-readable output, hex color extraction
+- Implemented ListCalendarsCommand with --json support
+- Bumped platform minimum to macOS 14 for requestFullAccessToEvents() API
+- Used @preconcurrency import and @unchecked Sendable for EKEventStore compatibility
+- Modified: CalendarService.swift, CalendarInfo.swift, ListCalendarsCommand.swift, AppleCalendarCLI.swift, Package.swift
+- Verification: swift build passes
