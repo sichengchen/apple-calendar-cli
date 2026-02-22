@@ -1,14 +1,15 @@
 ---
-id: 006
+id: 6
 title: Delete event command
-status: pending
+status: done
 type: feature
 priority: 6
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/2
 ---
-
 # Delete event command
 
 ## Context
@@ -35,3 +36,9 @@ Depends on plans 002, 005 (CalendarService with fetch-by-ID). EventKit allows re
 - Run: `.build/debug/apple-calendar-cli delete-event <id> --json`
 - Expected: JSON object with deleted event info
 - Edge cases: Non-existent event ID, already deleted event
+
+## Progress
+- Implemented DeleteEventCommand with JSON confirmation output
+- Captures event info before deletion for output
+- Modified: DeleteEventCommand.swift, AppleCalendarCLI.swift
+- Verification: swift build passes

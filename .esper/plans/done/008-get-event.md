@@ -1,14 +1,15 @@
 ---
-id: 008
+id: 8
 title: Get event by ID command
-status: pending
+status: done
 type: feature
 priority: 3
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/2
 ---
-
 # Get event by ID command
 
 ## Context
@@ -35,3 +36,9 @@ Depends on plans 002-003 (CalendarService, EventInfo model). Update and delete c
 - Run: `.build/debug/apple-calendar-cli get-event <id> --json`
 - Expected: JSON object with all event fields
 - Edge cases: Non-existent ID, deleted event
+
+## Progress
+- Implemented GetEventCommand with --json support, uses CalendarService.event(withIdentifier:)
+- Reuses EventInfo model for output
+- Modified: GetEventCommand.swift, AppleCalendarCLI.swift
+- Verification: swift build passes

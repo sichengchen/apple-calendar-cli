@@ -1,14 +1,15 @@
 ---
-id: 007
+id: 7
 title: Claude agent skill document
-status: pending
+status: done
 type: feature
 priority: 7
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/2
 ---
-
 # Claude agent skill document
 
 ## Context
@@ -35,3 +36,11 @@ Depends on plans 001-006 (all CLI commands implemented). The skill document teac
 - Manual review: skill document is comprehensive and accurate
 - Expected: An AI agent reading the skill can invoke all commands correctly
 - Edge cases: Document covers error scenarios and permission issues
+
+## Progress
+- Created comprehensive skill document at skills/apple-calendar-cli.md
+- Documents all 6 commands with full option reference, JSON schemas, example invocations
+- Includes common agent workflows, date format guide, error handling
+- Also fixed root command to AsyncParsableCommand for async subcommands
+- Modified: skills/apple-calendar-cli.md, AppleCalendarCLI.swift
+- Verification: manual review — document is comprehensive and accurate

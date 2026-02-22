@@ -48,3 +48,17 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - [ ] `swift test` passes
 - [ ] `swiftlint` passes with no warnings
 - [ ] `brew install` works from Homebrew formula
+
+## Shipped Plans
+- Plan 1 — Project scaffolding & SPM setup: Run `swift package init` and configure SPM with ArgumentParser + EventKit. Files: Package.swift, AppleCalendarCLI.swift, .swiftlint.yml, .gitignore, Info.plist
+- Plan 2 — List calendars command: Create CalendarService wrapper around EKEventStore and ListCalendarsCommand subcommand. Files: CalendarService.swift, CalendarInfo.swift, ListCalendarsCommand.swift, AppleCalendarCLI.swift
+- Plan 3 — List events command: Create ListEventsCommand with date range filtering and DateParser utility. Files: EventInfo.swift, DateParser.swift, ListEventsCommand.swift, AppleCalendarCLI.swift
+- Plan 8 — Get event by ID command: Create GetEventCommand for fetching single event by identifier. Files: GetEventCommand.swift, AppleCalendarCLI.swift
+- Plan 4 — Create event command: Create CreateEventCommand with title, start, end, calendar, notes, location, all-day, url options. Files: CreateEventCommand.swift, AppleCalendarCLI.swift
+- Plan 5 — Update event command: Create UpdateEventCommand with partial update support for all event fields. Files: UpdateEventCommand.swift, AppleCalendarCLI.swift
+- Plan 6 — Delete event command: Create DeleteEventCommand with JSON confirmation output. Files: DeleteEventCommand.swift, AppleCalendarCLI.swift
+- Plan 7 — Claude agent skill document: Create comprehensive agent skill document with command reference and workflows. Files: skills/apple-calendar-cli.md
+- Plan 9 — Recurring event support: Add recurrence rules to create/update, span control to update/delete. Files: EventInfo.swift, RecurrenceHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, DeleteEventCommand.swift
+- Plan 10 — Attendee management: Add AttendeeInfo model and attendee display in event output. Files: AttendeeInfo.swift, EventInfo.swift, CreateEventCommand.swift
+- Plan 11 — Alert/notification configuration: Add AlarmInfo model, AlertHelper parser, --alert flags. Files: AlarmInfo.swift, AlertHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, EventInfo.swift
+- Plan 12 — Homebrew formula & distribution: Add CI/CD workflows and Makefile for release builds. Files: .github/workflows/ci.yml, .github/workflows/release.yml, Makefile

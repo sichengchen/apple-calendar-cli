@@ -1,14 +1,15 @@
 ---
-id: 004
+id: 4
 title: Create event command
-status: pending
+status: done
 type: feature
 priority: 4
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/2
 ---
-
 # Create event command
 
 ## Context
@@ -40,3 +41,9 @@ Depends on plans 002-003 (CalendarService, DateParser, models exist). EventKit a
 - Run: `.build/debug/apple-calendar-cli create-event --title "Test" --start "2026-02-22T10:00:00" --end "2026-02-22T11:00:00" --json`
 - Expected: JSON object with event ID, title, dates
 - Edge cases: End before start, non-existent calendar name, overlapping events
+
+## Progress
+- Implemented CreateEventCommand with --title, --start, --end, --calendar, --notes, --location, --all-day, --url, --json
+- Input validation: end > start, calendar exists, date parsing
+- Modified: CreateEventCommand.swift, AppleCalendarCLI.swift
+- Verification: swift build passes
