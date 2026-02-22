@@ -49,6 +49,12 @@ struct UpdateEventCommand: AsyncParsableCommand {
     @Option(name: .long, help: "Number of occurrences for recurrence.")
     var recurrenceCount: Int?
 
+    @Option(name: .long, help: "Add an alert offset before event. E.g., 15m, 1h, 1d.")
+    var alert: String?
+
+    @Flag(name: .long, help: "Remove all existing alerts.")
+    var removeAlerts = false
+
     func run() async throws {
         let service = CalendarService()
         try await service.requestAccess()
@@ -117,6 +123,24 @@ struct UpdateEventCommand: AsyncParsableCommand {
                 )
                 event.addRecurrenceRule(rule)
             }
+        }
+
+        if removeAlerts {
+            if let existingAlarms = event.alarms {
+                for alarm in existingAlarms {
+                    event.removeAlarm(alarm)
+                }
+            }
+        }
+
+        if let alertStr = alert {
+            guard let offset = AlertHelper.parseOffset(alertStr) else {
+                throw ValidationError(
+                    "Invalid --alert value: '\(alertStr)'. Use format like 15m, 1h, 1d, or 30s."
+                )
+            }
+            let alarm = EKAlarm(relativeOffset: offset)
+            event.addAlarm(alarm)
         }
 
         if event.endDate <= event.startDate {
