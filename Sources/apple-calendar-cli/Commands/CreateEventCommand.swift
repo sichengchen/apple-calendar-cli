@@ -34,6 +34,18 @@ struct CreateEventCommand: AsyncParsableCommand {
     @Option(name: .long, help: "Event URL.")
     var url: String?
 
+    @Option(name: .long, help: "Recurrence frequency: daily, weekly, monthly, yearly.")
+    var recurrence: String?
+
+    @Option(name: .long, help: "Recurrence interval (default: 1). E.g., 2 for every 2 weeks.")
+    var interval: Int?
+
+    @Option(name: .long, help: "End date for recurrence (YYYY-MM-DD or ISO 8601).")
+    var recurrenceEnd: String?
+
+    @Option(name: .long, help: "Number of occurrences for recurrence.")
+    var recurrenceCount: Int?
+
     func run() async throws {
         let service = CalendarService()
         try await service.requestAccess()
@@ -73,6 +85,23 @@ struct CreateEventCommand: AsyncParsableCommand {
         event.location = location
         if let urlStr = url, let eventURL = URL(string: urlStr) {
             event.url = eventURL
+        }
+
+        if let recurrence {
+            guard let frequency = RecurrenceHelper.parseFrequency(recurrence) else {
+                throw ValidationError(
+                    "Invalid --recurrence value: '\(recurrence)'. Use daily, weekly, monthly, or yearly."
+                )
+            }
+            let recurrenceEndValue = try RecurrenceHelper.parseEnd(
+                endDate: recurrenceEnd, count: recurrenceCount
+            )
+            let rule = EKRecurrenceRule(
+                recurrenceWith: frequency,
+                interval: interval ?? 1,
+                end: recurrenceEndValue
+            )
+            event.addRecurrenceRule(rule)
         }
 
         try service.save(event)

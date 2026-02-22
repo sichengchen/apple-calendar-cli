@@ -34,6 +34,21 @@ struct UpdateEventCommand: AsyncParsableCommand {
     @Option(name: .long, help: "New event URL.")
     var url: String?
 
+    @Option(name: .long, help: "Span for recurring events: 'this' (this occurrence) or 'all' (all future). Default: this.")
+    var span: String?
+
+    @Option(name: .long, help: "Set recurrence: daily, weekly, monthly, yearly. Use 'none' to remove.")
+    var recurrence: String?
+
+    @Option(name: .long, help: "Recurrence interval (default: 1).")
+    var interval: Int?
+
+    @Option(name: .long, help: "End date for recurrence (YYYY-MM-DD or ISO 8601).")
+    var recurrenceEnd: String?
+
+    @Option(name: .long, help: "Number of occurrences for recurrence.")
+    var recurrenceCount: Int?
+
     func run() async throws {
         let service = CalendarService()
         try await service.requestAccess()
@@ -79,11 +94,47 @@ struct UpdateEventCommand: AsyncParsableCommand {
             event.url = URL(string: urlStr)
         }
 
+        if let recurrence {
+            // Remove existing rules
+            if let existingRules = event.recurrenceRules {
+                for rule in existingRules {
+                    event.removeRecurrenceRule(rule)
+                }
+            }
+            if recurrence.lowercased() != "none" {
+                guard let frequency = RecurrenceHelper.parseFrequency(recurrence) else {
+                    throw ValidationError(
+                        "Invalid --recurrence value: '\(recurrence)'. Use daily, weekly, monthly, yearly, or none."
+                    )
+                }
+                let recurrenceEndValue = try RecurrenceHelper.parseEnd(
+                    endDate: recurrenceEnd, count: recurrenceCount
+                )
+                let rule = EKRecurrenceRule(
+                    recurrenceWith: frequency,
+                    interval: interval ?? 1,
+                    end: recurrenceEndValue
+                )
+                event.addRecurrenceRule(rule)
+            }
+        }
+
         if event.endDate <= event.startDate {
             throw ValidationError("End date must be after start date.")
         }
 
-        try service.save(event)
+        let ekSpan: EKSpan
+        if let span {
+            switch span.lowercased() {
+            case "this": ekSpan = .thisEvent
+            case "all": ekSpan = .futureEvents
+            default: throw ValidationError("Invalid --span value: '\(span)'. Use 'this' or 'all'.")
+            }
+        } else {
+            ekSpan = .thisEvent
+        }
+
+        try service.save(event, span: ekSpan)
 
         let eventInfo = EventInfo(from: event)
         if globalOptions.json {

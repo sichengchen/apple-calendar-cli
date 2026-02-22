@@ -1,4 +1,5 @@
 import ArgumentParser
+@preconcurrency import EventKit
 import Foundation
 
 struct DeleteEventCommand: AsyncParsableCommand {
@@ -12,6 +13,9 @@ struct DeleteEventCommand: AsyncParsableCommand {
     @Argument(help: "The event identifier.")
     var id: String
 
+    @Option(name: .long, help: "Span for recurring events: 'this' (this occurrence) or 'all' (all future). Default: this.")
+    var span: String?
+
     func run() async throws {
         let service = CalendarService()
         try await service.requestAccess()
@@ -20,8 +24,19 @@ struct DeleteEventCommand: AsyncParsableCommand {
             throw CalendarServiceError.eventNotFound(id)
         }
 
+        let ekSpan: EKSpan
+        if let span {
+            switch span.lowercased() {
+            case "this": ekSpan = .thisEvent
+            case "all": ekSpan = .futureEvents
+            default: throw ValidationError("Invalid --span value: '\(span)'. Use 'this' or 'all'.")
+            }
+        } else {
+            ekSpan = .thisEvent
+        }
+
         let eventInfo = EventInfo(from: event)
-        try service.delete(event)
+        try service.delete(event, span: ekSpan)
 
         if globalOptions.json {
             let result = DeleteResult(deleted: true, event: eventInfo)
