@@ -1,13 +1,14 @@
 ---
 id: 13
 title: fix: dates output as UTC instead of local timezone
-status: active
+status: done
 type: fix
 priority: 1
 phase: 001-mvp-crud-and-agent-skill
 branch: fix/timezone-conversion
 created: 2026-02-22
 gh_issue: 3
+shipped_at: 2026-02-22
 ---
 # fix: dates output as UTC instead of local timezone
 
