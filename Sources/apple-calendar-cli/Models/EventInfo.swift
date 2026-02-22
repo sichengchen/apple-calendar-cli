@@ -101,6 +101,7 @@ struct RecurrenceRuleInfo: Codable {
             if let date = end.endDate {
                 let formatter = ISO8601DateFormatter()
                 formatter.formatOptions = [.withInternetDateTime]
+                formatter.timeZone = .current
                 self.endDate = formatter.string(from: date)
                 self.occurrenceCount = nil
             } else {
