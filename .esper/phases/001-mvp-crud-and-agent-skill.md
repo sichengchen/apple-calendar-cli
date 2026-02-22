@@ -53,3 +53,4 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - Plan 1 — Project scaffolding & SPM setup: Run `swift package init` and configure SPM with ArgumentParser + EventKit. Files: Package.swift, AppleCalendarCLI.swift, .swiftlint.yml, .gitignore, Info.plist
 - Plan 2 — List calendars command: Create CalendarService wrapper around EKEventStore and ListCalendarsCommand subcommand. Files: CalendarService.swift, CalendarInfo.swift, ListCalendarsCommand.swift, AppleCalendarCLI.swift
 - Plan 3 — List events command: Create ListEventsCommand with date range filtering and DateParser utility. Files: EventInfo.swift, DateParser.swift, ListEventsCommand.swift, AppleCalendarCLI.swift
+- Plan 8 — Get event by ID command: Create GetEventCommand for fetching single event by identifier. Files: GetEventCommand.swift, AppleCalendarCLI.swift
