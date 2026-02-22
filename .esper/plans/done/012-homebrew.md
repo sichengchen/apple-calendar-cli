@@ -1,14 +1,14 @@
 ---
-id: 012
+id: 12
 title: Homebrew formula & distribution
-status: pending
+status: done
 type: feature
 priority: 11
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # Homebrew formula & distribution
 
 ## Context
@@ -52,3 +52,11 @@ Depends on all prior plans (CLI must be feature-complete). Users need a simple `
 - Run: `brew test apple-calendar-cli` (if test block is defined in formula)
 - Expected: Basic smoke test passes
 - Edge cases: Xcode CLI tools version, macOS version requirements, PAT permissions for tap repo updates
+
+## Progress
+- Created CI workflow (.github/workflows/ci.yml) — build + test on PRs and main
+- Created release workflow (.github/workflows/release.yml) — build, create GitHub Release, update Homebrew tap
+- Created Makefile with build, release, install, uninstall, clean targets
+- Release build verified: swift build -c release produces working binary
+- Modified: .github/workflows/ci.yml, .github/workflows/release.yml, Makefile
+- Verification: swift build -c release passes, binary outputs version 0.1.0
