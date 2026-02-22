@@ -18,5 +18,12 @@ let package = Package(
                 .linkedFramework("EventKit"),
             ]
         ),
+        .testTarget(
+            name: "apple-calendar-cli-tests",
+            dependencies: ["apple-calendar-cli"],
+            linkerSettings: [
+                .linkedFramework("EventKit"),
+            ]
+        ),
     ]
 )
