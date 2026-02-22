@@ -1,14 +1,14 @@
 ---
-id: 003
+id: 3
 title: List events command
-status: pending
+status: done
 type: feature
 priority: 3
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # List events command
 
 ## Context
@@ -37,3 +37,10 @@ Depends on plan 002 (CalendarService exists). EventKit provides `EKEventStore.ev
 - Run: `.build/debug/apple-calendar-cli list-events --from 2026-02-21 --to 2026-02-28 --json`
 - Expected: JSON array of events in the specified range
 - Edge cases: No events in range, invalid date format, date range spanning midnight
+
+## Progress
+- Implemented EventInfo model with Codable, human-readable output
+- Implemented DateParser utility with multiple ISO 8601 format support
+- Implemented ListEventsCommand with --from, --to, --calendar, --json options
+- Modified: EventInfo.swift, DateParser.swift, ListEventsCommand.swift, AppleCalendarCLI.swift
+- Verification: swift build passes
