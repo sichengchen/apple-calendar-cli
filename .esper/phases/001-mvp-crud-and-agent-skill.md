@@ -62,3 +62,4 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - Plan 10 — Attendee management: Add AttendeeInfo model and attendee display in event output. Files: AttendeeInfo.swift, EventInfo.swift, CreateEventCommand.swift
 - Plan 11 — Alert/notification configuration: Add AlarmInfo model, AlertHelper parser, --alert flags. Files: AlarmInfo.swift, AlertHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, EventInfo.swift
 - Plan 12 — Homebrew formula & distribution: Add CI/CD workflows and Makefile for release builds. Files: .github/workflows/ci.yml, .github/workflows/release.yml, Makefile
+- Plan 13 — fix: dates output as UTC instead of local timezone: Change the output formatter in EventInfo.swift to use local timezone. Files: EventInfo.swift, DateParserTests.swift
