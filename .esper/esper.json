@@ -1,0 +1,10 @@
+{
+  "backlog_mode": "github",
+  "current_phase": "001-mvp-crud-and-agent-skill",
+  "commands": {
+    "test": "swift test",
+    "lint": "swiftlint",
+    "typecheck": "swift build",
+    "dev": ""
+  }
+}

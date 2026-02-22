@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:apple-calendar-cli}",
+      "name": "Debug apple-calendar-cli",
+      "target": "apple-calendar-cli",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug apple-calendar-cli"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:apple-calendar-cli}",
+      "name": "Release apple-calendar-cli",
+      "target": "apple-calendar-cli",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release apple-calendar-cli"
+    }
+  ]
+}
