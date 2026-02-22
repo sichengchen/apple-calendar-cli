@@ -28,10 +28,12 @@ jobs:
           cd dist
           tar -czf apple-calendar-cli-${{ steps.version.outputs.version }}-macos-arm64.tar.gz apple-calendar-cli
 
-      - name: Compute SHA256
+      - name: Compute SHA256 of source archive
         id: sha
         run: |
-          SHA=$(shasum -a 256 dist/apple-calendar-cli-${{ steps.version.outputs.version }}-macos-arm64.tar.gz | awk '{print $1}')
+          VERSION="${{ steps.version.outputs.version }}"
+          curl -sL -o /tmp/source.tar.gz "https://github.com/sichengchen/apple-calendar-cli/archive/refs/tags/${VERSION}.tar.gz"
+          SHA=$(shasum -a 256 /tmp/source.tar.gz | awk '{print $1}')
           echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
