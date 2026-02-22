@@ -50,9 +50,10 @@ jobs:
           REPO="sichengchen/apple-calendar-cli"
           TAP_REPO="sichengchen/homebrew-tap"
 
-          # Clone tap repo using gh
+          # Clone tap repo using gh, then set authenticated remote for push
           gh repo clone "${TAP_REPO}" /tmp/homebrew-tap
           cd /tmp/homebrew-tap
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
 
           mkdir -p Formula
 
