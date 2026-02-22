@@ -5,8 +5,8 @@ You have access to `apple-calendar-cli`, a command-line tool for managing Apple 
 ## Prerequisites
 
 - macOS 14+ required
+- Install: `brew install sichengchen/tap/apple-calendar-cli`
 - Calendar access permission must be granted (System Settings > Privacy & Security > Calendars)
-- The binary must be built: `swift build` then use `.build/debug/apple-calendar-cli` or install via Homebrew
 
 ## Date Format
 

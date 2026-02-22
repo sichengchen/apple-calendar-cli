@@ -122,7 +122,7 @@ On first run, macOS will prompt for calendar access. If denied, grant access in 
 
 ## AI agent usage
 
-A Claude agent skill document is included at [`skills/apple-calendar-cli.md`](skills/apple-calendar-cli.md) with full command reference, JSON schemas, and common workflows.
+A Claude agent skill document is included at [`skills/apple-calendar-cli`](skills/apple-calendar-cli/SKILL.md) with full command reference, JSON schemas, and common workflows.
 
 ## License
 
