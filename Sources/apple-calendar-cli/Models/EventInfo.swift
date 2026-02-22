@@ -51,6 +51,7 @@ struct EventInfo: Codable {
     private static nonisolated(unsafe) let formatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = .current
         return formatter
     }()
 
