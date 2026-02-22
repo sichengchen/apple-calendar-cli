@@ -13,6 +13,7 @@ struct AppleCalendarCLI: ParsableCommand {
         version: "0.1.0",
         subcommands: [
             ListCalendarsCommand.self,
+            ListEventsCommand.self,
         ]
     )
 }
