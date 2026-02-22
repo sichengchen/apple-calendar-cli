@@ -56,3 +56,4 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - Plan 8 — Get event by ID command: Create GetEventCommand for fetching single event by identifier. Files: GetEventCommand.swift, AppleCalendarCLI.swift
 - Plan 4 — Create event command: Create CreateEventCommand with title, start, end, calendar, notes, location, all-day, url options. Files: CreateEventCommand.swift, AppleCalendarCLI.swift
 - Plan 5 — Update event command: Create UpdateEventCommand with partial update support for all event fields. Files: UpdateEventCommand.swift, AppleCalendarCLI.swift
+- Plan 6 — Delete event command: Create DeleteEventCommand with JSON confirmation output. Files: DeleteEventCommand.swift, AppleCalendarCLI.swift
