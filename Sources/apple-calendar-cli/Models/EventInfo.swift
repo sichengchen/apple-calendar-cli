@@ -14,6 +14,9 @@ struct EventInfo: Codable {
     let url: String?
     let hasRecurrenceRules: Bool
     let recurrenceRules: [RecurrenceRuleInfo]?
+    let attendees: [AttendeeInfo]?
+    let hasAlarms: Bool
+    let alarms: [AlarmInfo]?
 
     init(from event: EKEvent) {
         self.identifier = event.eventIdentifier
@@ -31,6 +34,17 @@ struct EventInfo: Codable {
             self.recurrenceRules = rules.map { RecurrenceRuleInfo(from: $0) }
         } else {
             self.recurrenceRules = nil
+        }
+        if let participants = event.attendees, !participants.isEmpty {
+            self.attendees = participants.map { AttendeeInfo(from: $0) }
+        } else {
+            self.attendees = nil
+        }
+        self.hasAlarms = event.hasAlarms
+        if event.hasAlarms, let eventAlarms = event.alarms {
+            self.alarms = eventAlarms.map { AlarmInfo(from: $0) }
+        } else {
+            self.alarms = nil
         }
     }
 
@@ -59,6 +73,14 @@ struct EventInfo: Codable {
                 line += " every \(first.interval)"
             }
             line += "]"
+        }
+        if let attendees, !attendees.isEmpty {
+            let names = attendees.compactMap { $0.name ?? $0.email }.joined(separator: ", ")
+            line += "  [attendees: \(names)]"
+        }
+        if let alarms, !alarms.isEmpty {
+            let alerts = alarms.map { $0.humanReadable() }.joined(separator: ", ")
+            line += "  [alerts: \(alerts)]"
         }
         line += "  (\(identifier))"
         return line

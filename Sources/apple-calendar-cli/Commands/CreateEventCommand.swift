@@ -46,6 +46,12 @@ struct CreateEventCommand: AsyncParsableCommand {
     @Option(name: .long, help: "Number of occurrences for recurrence.")
     var recurrenceCount: Int?
 
+    @Option(name: .long, help: "Comma-separated attendee email addresses.")
+    var attendees: String?
+
+    @Option(name: .long, help: "Alert offset before event. E.g., 15m, 1h, 1d.")
+    var alert: String?
+
     func run() async throws {
         let service = CalendarService()
         try await service.requestAccess()
@@ -85,6 +91,25 @@ struct CreateEventCommand: AsyncParsableCommand {
         event.location = location
         if let urlStr = url, let eventURL = URL(string: urlStr) {
             event.url = eventURL
+        }
+
+        if let attendeesStr = attendees {
+            // EventKit does not support programmatic attendee addition via public API.
+            // Attendees are managed by the calendar server (CalDAV/Exchange).
+            // We append attendee emails to notes so the information is captured.
+            let emails = attendeesStr.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            let attendeeNote = "Attendees: \(emails.joined(separator: ", "))"
+            event.notes = [event.notes, attendeeNote].compactMap { $0 }.joined(separator: "\n")
+        }
+
+        if let alertStr = alert {
+            guard let offset = AlertHelper.parseOffset(alertStr) else {
+                throw ValidationError(
+                    "Invalid --alert value: '\(alertStr)'. Use format like 15m, 1h, 1d, or 30s."
+                )
+            }
+            let alarm = EKAlarm(relativeOffset: offset)
+            event.addAlarm(alarm)
         }
 
         if let recurrence {
