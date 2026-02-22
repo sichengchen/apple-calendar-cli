@@ -8,6 +8,7 @@ phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
 shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/2
 ---
 # Project scaffolding & SPM setup
 
