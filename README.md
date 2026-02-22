@@ -4,6 +4,10 @@ A command-line tool for Apple Calendar (Calendar.app) operations via EventKit. S
 
 macOS 14+ only.
 
+## AI agent usage
+
+An agent skill document is included at [`skills/apple-calendar-cli`](skills/apple-calendar-cli/SKILL.md) with full command reference, JSON schemas, and common workflows. The skill is also available on [ClawHub](https://clawhub.ai/sichengchen/apple-calendar-cli).
+
 ## Install
 
 ### Homebrew
@@ -119,10 +123,6 @@ apple-calendar-cli delete-event EVENT-ID --span all
 ## Permissions
 
 On first run, macOS will prompt for calendar access. If denied, grant access in **System Settings > Privacy & Security > Calendars**.
-
-## AI agent usage
-
-A Claude agent skill document is included at [`skills/apple-calendar-cli`](skills/apple-calendar-cli/SKILL.md) with full command reference, JSON schemas, and common workflows.
 
 ## License
 
