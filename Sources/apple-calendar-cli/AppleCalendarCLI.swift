@@ -16,6 +16,7 @@ struct AppleCalendarCLI: ParsableCommand {
             ListEventsCommand.self,
             GetEventCommand.self,
             CreateEventCommand.self,
+            UpdateEventCommand.self,
         ]
     )
 }
