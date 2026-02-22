@@ -1,14 +1,14 @@
 ---
-id: 009
+id: 9
 title: Recurring event support
-status: pending
+status: done
 type: feature
 priority: 8
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # Recurring event support
 
 ## Context
@@ -41,3 +41,13 @@ Depends on plans 003-006 (all CRUD commands). EventKit supports recurrence rules
 - Run: `.build/debug/apple-calendar-cli list-events --from ... --to ...` on a range with recurrences
 - Expected: Shows individual occurrences with recurrence info
 - Edge cases: Deleting single occurrence vs all, updating recurrence pattern
+
+## Progress
+- Added RecurrenceRuleInfo model with frequency, interval, endDate, occurrenceCount
+- Added RecurrenceHelper utility for parsing frequency strings and recurrence end
+- Added --recurrence, --interval, --recurrence-end, --recurrence-count to create-event
+- Added --recurrence, --interval, --recurrence-end, --recurrence-count, --span to update-event
+- Added --span to delete-event for recurring events
+- Updated EventInfo to include recurrenceRules in JSON output and human-readable display
+- Modified: EventInfo.swift, RecurrenceHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, DeleteEventCommand.swift
+- Verification: swift build passes
