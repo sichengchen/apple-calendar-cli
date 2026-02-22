@@ -11,6 +11,8 @@ struct AppleCalendarCLI: ParsableCommand {
         commandName: "apple-calendar-cli",
         abstract: "A command-line tool for Apple Calendar operations via EventKit.",
         version: "0.1.0",
-        subcommands: []
+        subcommands: [
+            ListCalendarsCommand.self,
+        ]
     )
 }
