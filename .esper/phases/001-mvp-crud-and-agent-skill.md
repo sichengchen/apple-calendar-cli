@@ -48,3 +48,6 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - [ ] `swift test` passes
 - [ ] `swiftlint` passes with no warnings
 - [ ] `brew install` works from Homebrew formula
+
+## Shipped Plans
+- Plan 1 — Project scaffolding & SPM setup: Run `swift package init` and configure SPM with ArgumentParser + EventKit. Files: Package.swift, AppleCalendarCLI.swift, .swiftlint.yml, .gitignore, Info.plist
