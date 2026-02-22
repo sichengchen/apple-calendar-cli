@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release binary
+        run: swift build -c release
+
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create tarball
+        run: |
+          mkdir -p dist
+          cp .build/release/apple-calendar-cli dist/
+          cd dist
+          tar -czf apple-calendar-cli-${{ steps.version.outputs.version }}-macos-arm64.tar.gz apple-calendar-cli
+
+      - name: Compute SHA256
+        id: sha
+        run: |
+          SHA=$(shasum -a 256 dist/apple-calendar-cli-${{ steps.version.outputs.version }}-macos-arm64.tar.gz | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/apple-calendar-cli-${{ steps.version.outputs.version }}-macos-arm64.tar.gz
+          generate_release_notes: true
+
+      - name: Update Homebrew tap
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        if: env.TAP_GITHUB_TOKEN != ''
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SHA="${{ steps.sha.outputs.sha256 }}"
+          REPO="sichengchen/apple-calendar-cli"
+          TAP_REPO="sichengchen/homebrew-tap"
+
+          # Clone tap repo
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/${TAP_REPO}.git" /tmp/homebrew-tap
+          cd /tmp/homebrew-tap
+
+          mkdir -p Formula
+
+          cat > Formula/apple-calendar-cli.rb << FORMULA
+          class AppleCalendarCli < Formula
+            desc "Command-line tool for Apple Calendar operations via EventKit"
+            homepage "https://github.com/${REPO}"
+            url "https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "${SHA}"
+            license "MIT"
+
+            depends_on :macos
+            depends_on xcode: ["15.0", :build]
+
+            def install
+              system "swift", "build", "-c", "release", "--disable-sandbox"
+              bin.install ".build/release/apple-calendar-cli"
+            end
+
+            test do
+              assert_match "apple-calendar-cli", shell_output("#{bin}/apple-calendar-cli --version")
+            end
+          end
+          FORMULA
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/apple-calendar-cli.rb
+          git commit -m "Update apple-calendar-cli to ${VERSION}" || true
+          git push
