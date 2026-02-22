@@ -58,3 +58,4 @@ Deliver a working Swift CLI that can list calendars, list/create/update/delete e
 - Plan 5 — Update event command: Create UpdateEventCommand with partial update support for all event fields. Files: UpdateEventCommand.swift, AppleCalendarCLI.swift
 - Plan 6 — Delete event command: Create DeleteEventCommand with JSON confirmation output. Files: DeleteEventCommand.swift, AppleCalendarCLI.swift
 - Plan 7 — Claude agent skill document: Create comprehensive agent skill document with command reference and workflows. Files: skills/apple-calendar-cli.md
+- Plan 9 — Recurring event support: Add recurrence rules to create/update, span control to update/delete. Files: EventInfo.swift, RecurrenceHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, DeleteEventCommand.swift
