@@ -9,6 +9,7 @@ branch: fix/timezone-conversion
 created: 2026-02-22
 gh_issue: 3
 shipped_at: 2026-02-22
+pr: https://github.com/sichengchen/apple-calendar-cli/pull/4
 ---
 # fix: dates output as UTC instead of local timezone
 
