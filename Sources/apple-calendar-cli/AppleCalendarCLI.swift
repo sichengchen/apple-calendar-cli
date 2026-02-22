@@ -6,7 +6,7 @@ struct GlobalOptions: ParsableArguments {
 }
 
 @main
-struct AppleCalendarCLI: ParsableCommand {
+struct AppleCalendarCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "apple-calendar-cli",
         abstract: "A command-line tool for Apple Calendar operations via EventKit.",
