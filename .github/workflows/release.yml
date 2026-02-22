@@ -42,26 +42,20 @@ jobs:
 
       - name: Update Homebrew tap
         env:
-          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-        if: env.TAP_GITHUB_TOKEN != ''
+          GH_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        if: env.GH_TOKEN != ''
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA="${{ steps.sha.outputs.sha256 }}"
           REPO="sichengchen/apple-calendar-cli"
           TAP_REPO="sichengchen/homebrew-tap"
 
-          # Clone tap repo
-          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/${TAP_REPO}.git" /tmp/homebrew-tap
-          cd /tmp/homebrew-tap
-
-          mkdir -p Formula
-
-          cat > Formula/apple-calendar-cli.rb << FORMULA
+          FORMULA_CONTENT=$(cat <<'RUBY'
           class AppleCalendarCli < Formula
             desc "Command-line tool for Apple Calendar operations via EventKit"
-            homepage "https://github.com/${REPO}"
-            url "https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
-            sha256 "${SHA}"
+            homepage "https://github.com/sichengchen/apple-calendar-cli"
+            url "URL_PLACEHOLDER"
+            sha256 "SHA_PLACEHOLDER"
             license "MIT"
 
             depends_on :macos
@@ -76,10 +70,27 @@ jobs:
               assert_match "apple-calendar-cli", shell_output("#{bin}/apple-calendar-cli --version")
             end
           end
-          FORMULA
+          RUBY
+          )
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/apple-calendar-cli.rb
-          git commit -m "Update apple-calendar-cli to ${VERSION}" || true
-          git push
+          FORMULA_CONTENT="${FORMULA_CONTENT//URL_PLACEHOLDER/https:\/\/github.com\/${REPO}\/archive\/refs\/tags\/${VERSION}.tar.gz}"
+          FORMULA_CONTENT="${FORMULA_CONTENT//SHA_PLACEHOLDER/${SHA}}"
+
+          # Use gh api to create or update the formula file in the tap repo
+          ENCODED_CONTENT=$(echo "$FORMULA_CONTENT" | base64)
+
+          # Check if file already exists to get its SHA for updates
+          EXISTING_SHA=$(gh api "repos/${TAP_REPO}/contents/Formula/apple-calendar-cli.rb" --jq '.sha' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_SHA" ]; then
+            gh api "repos/${TAP_REPO}/contents/Formula/apple-calendar-cli.rb" \
+              --method PUT \
+              -f message="Update apple-calendar-cli to ${VERSION}" \
+              -f content="$ENCODED_CONTENT" \
+              -f sha="$EXISTING_SHA"
+          else
+            gh api "repos/${TAP_REPO}/contents/Formula/apple-calendar-cli.rb" \
+              --method PUT \
+              -f message="Add apple-calendar-cli ${VERSION}" \
+              -f content="$ENCODED_CONTENT"
+          fi
