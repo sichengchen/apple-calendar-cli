@@ -1,12 +1,13 @@
 ---
 id: 1
 title: Project scaffolding & SPM setup
-status: active
+status: done
 type: feature
 priority: 1
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
 # Project scaffolding & SPM setup
 
