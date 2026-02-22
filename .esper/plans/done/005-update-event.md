@@ -1,14 +1,14 @@
 ---
-id: 005
+id: 5
 title: Update event command
-status: pending
+status: done
 type: feature
 priority: 5
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # Update event command
 
 ## Context
@@ -39,3 +39,9 @@ Depends on plans 002-004 (CalendarService with create, models, date parsing). Ev
 - Run: `.build/debug/apple-calendar-cli update-event <id> --title "Updated Title"`
 - Expected: Event updated, prints new details
 - Edge cases: Non-existent event ID, updating only one field, moving between calendars
+
+## Progress
+- Implemented UpdateEventCommand with partial update for title, start, end, calendar, notes, location, url
+- Validates end > start after applying changes
+- Modified: UpdateEventCommand.swift, AppleCalendarCLI.swift
+- Verification: swift build passes
