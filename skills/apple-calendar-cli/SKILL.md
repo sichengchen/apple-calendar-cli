@@ -70,8 +70,8 @@ apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-28 --calendar CALE
   {
     "identifier": "EVENT-ID",
     "title": "Team standup",
-    "startDate": "2026-02-22T10:00:00Z",
-    "endDate": "2026-02-22T10:30:00Z",
+    "startDate": "2026-02-22T10:00:00-08:00",
+    "endDate": "2026-02-22T10:30:00-08:00",
     "isAllDay": false,
     "location": "Conference Room A",
     "notes": null,
@@ -213,8 +213,11 @@ apple-calendar-cli create-event \
 
 ### Check today's schedule
 
+Date-only values resolve to midnight (`00:00:00`), so `--to` must be the **next day** to cover the full day:
+
 ```bash
-apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-22 --json
+# Correct: covers 2026-02-22 00:00 to 2026-02-23 00:00
+apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-23 --json
 ```
 
 ## Error Handling
