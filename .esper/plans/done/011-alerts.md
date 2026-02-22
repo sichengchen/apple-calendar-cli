@@ -1,14 +1,14 @@
 ---
-id: 011
+id: 11
 title: Alert/notification configuration
-status: pending
+status: done
 type: feature
 priority: 10
 phase: 001-mvp-crud-and-agent-skill
 branch: feature/001-mvp-crud-and-agent-skill
 created: 2026-02-21
+shipped_at: 2026-02-22
 ---
-
 # Alert/notification configuration
 
 ## Context
@@ -37,3 +37,12 @@ Depends on plans 004-005 (create/update event). EventKit supports alerts via `EK
 - Run: `.build/debug/apple-calendar-cli get-event <id> --json`
 - Expected: JSON includes alerts array
 - Edge cases: Invalid alert format, removing all alerts, 0m offset
+
+## Progress
+- Created AlarmInfo model with relativeOffset and human-readable description
+- Created AlertHelper utility for parsing offset strings (15m, 1h, 1d, etc.)
+- Added --alert to create-event and update-event
+- Added --remove-alerts flag to update-event
+- Updated EventInfo to include alarms in JSON output and human-readable display
+- Modified: AlarmInfo.swift, AlertHelper.swift, CreateEventCommand.swift, UpdateEventCommand.swift, EventInfo.swift
+- Verification: swift build passes
