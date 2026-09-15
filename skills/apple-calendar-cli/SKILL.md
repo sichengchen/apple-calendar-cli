@@ -128,10 +128,11 @@ apple-calendar-cli create-event \
 - `--all-day` — Mark as all-day event
 - `--url` — Event URL
 - `--recurrence` — Recurrence rule: `daily`, `weekly`, `monthly`, `yearly`
+- `--interval` — Recurrence interval (default: 1). E.g., `2` for every 2 weeks
 - `--recurrence-end` — End date for recurrence
 - `--recurrence-count` — Number of occurrences
 - `--attendees` — Comma-separated email addresses
-- `--alert` — Alert offset (e.g., `15m`, `1h`, `1d`)
+- `--alert` — Alert offset (e.g., `30s`, `15m`, `1h`, `1d`, `1w`)
 
 **JSON output** — the created event object with its new identifier.
 
@@ -146,6 +147,9 @@ apple-calendar-cli update-event EVENT-ID \
   --end "2026-02-23T16:00:00" \
   --location "Room B" \
   --json
+
+# Recurring event — update all future occurrences
+apple-calendar-cli update-event EVENT-ID --title "Updated" --span all --json
 ```
 
 **Required argument:**
@@ -159,6 +163,13 @@ apple-calendar-cli update-event EVENT-ID \
 - `--notes` — New notes
 - `--location` — New location
 - `--url` — New URL
+- `--span` — Span for recurring events: `this` (this occurrence) or `all` (all future). Default: `this`
+- `--recurrence` — Set recurrence: `daily`, `weekly`, `monthly`, `yearly`. Use `none` to remove
+- `--interval` — Recurrence interval (default: 1)
+- `--recurrence-end` — End date for recurrence
+- `--recurrence-count` — Number of occurrences for recurrence
+- `--alert` — Add an alert offset before event (e.g., `15m`, `1h`, `1d`)
+- `--remove-alerts` — Remove all existing alerts
 
 **JSON output** — the updated event object.
 
@@ -168,7 +179,13 @@ Delete a calendar event.
 
 ```bash
 apple-calendar-cli delete-event EVENT-ID --json
+
+# Delete all occurrences of a recurring event
+apple-calendar-cli delete-event EVENT-ID --span all --json
 ```
+
+**Options:**
+- `--span` — Span for recurring events: `this` (this occurrence) or `all` (all future). Default: `this`
 
 **JSON output:**
 ```json
