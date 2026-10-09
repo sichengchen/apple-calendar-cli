@@ -7,6 +7,8 @@ build:
 
 release:
 	swift build -c release
+	# Bind the embedded Info.plist and bundle identifier into the local code signature.
+	codesign --force --sign - .build/release/apple-calendar-cli
 
 install: release
 	install -d $(PREFIX)/bin

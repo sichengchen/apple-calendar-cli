@@ -122,13 +122,14 @@ jobs:
         run: swift test
 
       - name: Build release binary
-        run: swift build -c release
+        run: make release
 
       - name: Package and smoke test release binary
         run: |
           set -euo pipefail
           mkdir -p dist
           cp .build/release/apple-calendar-cli dist/
+          bash scripts/verify-permissions.sh dist/apple-calendar-cli
           actual_version="$(dist/apple-calendar-cli --version)"
           if [[ "$actual_version" != "$RELEASE_VERSION" ]]; then
             echo "Expected version $RELEASE_VERSION, got $actual_version" >&2
@@ -203,11 +204,14 @@ jobs:
 
             def install
               system "swift", "build", "-c", "release", "--disable-sandbox"
+              system "codesign", "--force", "--sign", "-", ".build/release/apple-calendar-cli"
               bin.install ".build/release/apple-calendar-cli"
             end
 
             test do
               assert_equal "${RELEASE_VERSION}", shell_output("#{bin}/apple-calendar-cli --version").strip
+              system "codesign", "--verify", "--strict", "-R",
+                     '=identifier "com.scchan.apple-calendar-cli"', bin/"apple-calendar-cli"
             end
           end
           FORMULA

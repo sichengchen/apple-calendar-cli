@@ -122,7 +122,9 @@ apple-calendar-cli delete-event EVENT-ID --span all
 
 ## Permissions
 
-On first run, macOS will prompt for calendar access. If denied, grant access in **System Settings > Privacy & Security > Calendars**.
+Run `apple-calendar-cli list-calendars` interactively to request full Calendar access. The executable embeds its Calendar usage descriptions, so a Homebrew installation does not need a separate `Info.plist` or app bundle.
+
+macOS may attribute a command-line permission request to the app that launches it, such as Terminal or an agent's desktop app. If access is denied, check **System Settings > Privacy & Security > Calendars** for that app as well as `apple-calendar-cli`. A background or remote session may not be able to present a permission dialog; make the initial request from a local terminal.
 
 ## Releases
 

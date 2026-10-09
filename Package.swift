@@ -1,6 +1,12 @@
 // swift-tools-version: 6.0
 
+import Foundation
 import PackageDescription
+
+let infoPlistPath = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .appendingPathComponent("Info.plist")
+    .path
 
 let package = Package(
     name: "apple-calendar-cli",
@@ -16,6 +22,13 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("EventKit"),
+                // A standalone CLI needs its privacy usage strings embedded in the Mach-O binary.
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", infoPlistPath,
+                ]),
             ]
         ),
         .testTarget(
