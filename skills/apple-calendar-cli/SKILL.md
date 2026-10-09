@@ -1,258 +1,139 @@
-# Apple Calendar CLI — Agent Skill
+---
+name: apple-calendar-cli
+description: Manage Apple Calendar events on macOS with apple-calendar-cli. Use when listing calendars, finding or scheduling events, rescheduling meetings, or managing recurrence and alerts.
+license: MIT
+---
 
-You have access to `apple-calendar-cli`, a command-line tool for managing Apple Calendar events via EventKit on macOS.
+# Apple Calendar
 
-## Prerequisites
+Use `apple-calendar-cli` to work with the local Apple Calendar store through EventKit on macOS 14 or later. Use `--json` on calendar commands and inspect identifiers from their output rather than guessing an event or calendar ID.
 
-- macOS 14+ required
-- Install: `brew install sichengchen/tap/apple-calendar-cli`
-- Calendar access permission must be granted (System Settings > Privacy & Security > Calendars)
+## Setup and discovery
 
-## Date Format
+Check `apple-calendar-cli --version` and `apple-calendar-cli help`. For options not covered here, run `apple-calendar-cli help <command>`; the installed executable is authoritative.
 
-All dates use ISO 8601 format:
-- Date only: `YYYY-MM-DD` (interpreted as start of day in local timezone)
-- Date and time: `YYYY-MM-DDTHH:MM:SS` (local timezone)
-- Full ISO 8601: `YYYY-MM-DDTHH:MM:SSZ` or with offset
+If the CLI is missing, install it with `brew install sichengchen/tap/apple-calendar-cli` when the user requests installation. `apple-calendar-cli init` installs or updates this bundled skill for selected agents; it does not request Calendar access. In scripts, choose agents explicitly, for example `apple-calendar-cli init --agent codex --agent claude --agent pi`. Use `--scope project` for project skills and `--dry-run --json` to preview changes.
 
-## Global Options
+A Calendar command requests full access. If permission is missing, ask the user to run `apple-calendar-cli list-calendars` from a local interactive terminal. In **System Settings > Privacy & Security > Calendars**, access may be attributed to the launching app, such as Terminal or an agent's desktop app. A background or remote process may not present a permission dialog. Repeatedly retrying a denied request does not grant access.
 
-- `--json` — Output results as structured JSON (available on all commands)
-- `--version` — Show version
-- `--help` / `-h` — Show help
+## Dates and ranges
 
-**Always use `--json` when calling from an agent** for reliable parsing.
+- `YYYY-MM-DD`: midnight in the local timezone.
+- `YYYY-MM-DDTHH:MM:SS` or `YYYY-MM-DDTHH:MM`: local wall-clock time.
+- `YYYY-MM-DDTHH:MM:SSZ` or a numeric offset: an explicit instant.
+- JSON timestamps include an offset. Preserve it when rescheduling across timezones.
+- The event end must be after its start. For an all-day event, use `--all-day` and the next date as the end of a single-day event.
+- For a full-day search, use the following day's midnight as `--to`; equal `--from` and `--to` dates do not represent the full day. An omitted `--to` defaults to seven days after the search start.
 
-## Commands
+Resolve an ambiguous date, timezone, or recurring-event scope before changing the calendar.
 
-### list-calendars
-
-List all available calendars.
+## Read commands
 
 ```bash
 apple-calendar-cli list-calendars --json
-```
-
-**JSON output** — array of objects:
-```json
-[
-  {
-    "identifier": "CALENDAR-ID",
-    "title": "Work",
-    "type": "calDAV",
-    "source": "iCloud",
-    "color": "#1BADF8",
-    "isImmutable": false
-  }
-]
-```
-
-Use `identifier` to filter events or target a specific calendar when creating events.
-
-### list-events
-
-List events within a date range.
-
-```bash
 apple-calendar-cli list-events --json
-apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-28 --json
-apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-28 --calendar CALENDAR-ID --json
-```
-
-**Options:**
-- `--from` — Start date (default: today)
-- `--to` — End date (default: 7 days from start)
-- `--calendar` — Filter by calendar identifier
-
-**JSON output** — array of event objects:
-```json
-[
-  {
-    "identifier": "EVENT-ID",
-    "title": "Team standup",
-    "startDate": "2026-02-22T10:00:00Z",
-    "endDate": "2026-02-22T10:30:00Z",
-    "isAllDay": false,
-    "location": "Conference Room A",
-    "notes": null,
-    "calendarTitle": "Work",
-    "calendarIdentifier": "CALENDAR-ID",
-    "url": null,
-    "hasRecurrenceRules": true
-  }
-]
-```
-
-### get-event
-
-Get full details of a single event.
-
-```bash
+apple-calendar-cli list-events --from 2026-10-13 --to 2026-10-14 --json
+apple-calendar-cli list-events --from 2026-10-13 --to 2026-10-20 --calendar CALENDAR-ID --json
 apple-calendar-cli get-event EVENT-ID --json
 ```
 
-**JSON output** — single event object (same schema as list-events items).
+`list-events` defaults to the start of today through the next seven days. Choose a bounded range when searching for a particular event. `get-event` reads the event using the identifier returned by a listing.
 
-### create-event
-
-Create a new calendar event.
+## Create events
 
 ```bash
 apple-calendar-cli create-event \
-  --title "Meeting with Alice" \
-  --start "2026-02-23T14:00:00" \
-  --end "2026-02-23T15:00:00" \
-  --json
-
-apple-calendar-cli create-event \
-  --title "All-day conference" \
-  --start "2026-03-01" \
-  --end "2026-03-02" \
-  --all-day \
+  --title "Planning" \
+  --start "2026-10-13T10:00:00" \
+  --end "2026-10-13T10:30:00" \
   --calendar CALENDAR-ID \
-  --location "Convention Center" \
-  --notes "Bring laptop" \
-  --url "https://example.com/conf" \
+  --alert 15m \
   --json
 ```
 
-**Required options:**
-- `--title` — Event title
-- `--start` — Start date/time
-- `--end` — End date/time (must be after start)
+Required: `--title`, `--start`, `--end`.
 
-**Optional options:**
-- `--calendar` — Calendar identifier (default: system default calendar)
-- `--notes` — Event notes
-- `--location` — Event location
-- `--all-day` — Mark as all-day event
-- `--url` — Event URL
-- `--recurrence` — Recurrence rule: `daily`, `weekly`, `monthly`, `yearly`
-- `--interval` — Recurrence interval (default: 1). E.g., `2` for every 2 weeks
-- `--recurrence-end` — End date for recurrence
-- `--recurrence-count` — Number of occurrences
-- `--attendees` — Comma-separated email addresses
-- `--alert` — Alert offset (e.g., `30s`, `15m`, `1h`, `1d`, `1w`)
+Optional: `--calendar`, `--notes`, `--location`, `--all-day`, `--url`, `--alert`, `--attendees`, `--recurrence`, `--interval`, `--recurrence-end`, `--recurrence-count`.
 
-**JSON output** — the created event object with its new identifier.
+Without `--calendar`, the default calendar receives the event. Use `list-calendars` to identify the requested destination.
 
-### update-event
+`--attendees` takes comma-separated emails and appends them to the event's **notes**. It does not add EventKit participants or send invitations. Do not describe an event created with this flag as an invitation.
 
-Update an existing event (partial update — only specified fields change).
+## Update events
 
 ```bash
-apple-calendar-cli update-event EVENT-ID --title "New title" --json
+apple-calendar-cli update-event EVENT-ID --title "Updated planning" --json
 apple-calendar-cli update-event EVENT-ID \
-  --start "2026-02-23T15:00:00" \
-  --end "2026-02-23T16:00:00" \
+  --start "2026-10-13T11:00:00" \
+  --end "2026-10-13T11:30:00" \
   --location "Room B" \
   --json
-
-# Recurring event — update all future occurrences
-apple-calendar-cli update-event EVENT-ID --title "Updated" --span all --json
-
-# Replace recurrence with every 2 weeks, ending after 10 occurrences
-apple-calendar-cli update-event EVENT-ID \
-  --recurrence weekly \
-  --interval 2 \
-  --recurrence-count 10 \
-  --span all \
-  --json
 ```
 
-**Required argument:**
-- `<id>` — Event identifier
+Only supplied fields change. Accepted fields: `--title`, `--start`, `--end`, `--calendar`, `--notes`, `--location`, `--url`, `--recurrence`, `--interval`, `--recurrence-end`, `--recurrence-count`, `--alert`, `--remove-alerts`, `--span`.
 
-**Optional options:**
-- `--title` — New title
-- `--start` — New start date/time
-- `--end` — New end date/time
-- `--calendar` — Move to different calendar (by identifier)
-- `--notes` — New notes
-- `--location` — New location
-- `--url` — New URL
-- `--span` — Span for recurring events: `this` (this occurrence) or `all` (all future). Default: `this`
-- `--recurrence` — Set recurrence: `daily`, `weekly`, `monthly`, `yearly`. Use `none` to remove
-- `--interval` — Recurrence interval (default: 1)
-- `--recurrence-end` — End date for recurrence
-- `--recurrence-count` — Number of occurrences for recurrence
-- `--alert` — Add an alert offset before event (e.g., `15m`, `1h`, `1d`)
-- `--remove-alerts` — Remove all existing alerts
+For a time shift, provide both start and end to preserve the desired duration; changing start alone leaves the old end in place. Updating supports neither `--all-day` nor `--attendees`.
 
-`--interval`, `--recurrence-end`, and `--recurrence-count` only apply when setting
-`--recurrence` to a frequency; otherwise they are ignored. Setting a frequency
-replaces the existing recurrence rules. Omitted settings are not preserved:
-the interval defaults to `1`, and omitting both end options makes recurrence
-repeat indefinitely. Include the desired interval and end condition when
-replacing a rule. If both end options are supplied, `--recurrence-end` takes
-precedence over `--recurrence-count`.
-
-**JSON output** — the updated event object.
-
-### delete-event
-
-Delete a calendar event.
+`--alert` adds an alarm. `--remove-alerts` removes every existing alarm. Use both together to replace the alert list with one new alarm:
 
 ```bash
-apple-calendar-cli delete-event EVENT-ID --json
+apple-calendar-cli update-event EVENT-ID --remove-alerts --alert 30m --json
+```
 
-# Delete all occurrences of a recurring event
+## Recurrence and deletion
+
+Create or replace recurrence with `--recurrence daily|weekly|monthly|yearly`. `--interval N` defaults to `1`. Use a positive interval and either `--recurrence-end DATE` or `--recurrence-count N` when a bounded series is intended. If both end conditions are supplied, the end date takes precedence.
+
+On update, `--recurrence` replaces all existing recurrence rules. Omitted recurrence settings are not preserved: the interval resets to `1`, and omitting both end conditions makes the new series indefinite. `--interval`, `--recurrence-end`, and `--recurrence-count` have no effect without a frequency in `--recurrence`. Use `--recurrence none` on update to remove recurrence.
+
+`--span this` is the default for update and delete: it affects the addressed occurrence. `--span all` means **this and future occurrences**, not past occurrences. Choose the intended occurrence and scope before applying a series change.
+
+```bash
+apple-calendar-cli update-event EVENT-ID \
+  --recurrence weekly --interval 2 --recurrence-count 10 --span all --json
+
+apple-calendar-cli delete-event EVENT-ID --json
 apple-calendar-cli delete-event EVENT-ID --span all --json
 ```
 
-**Options:**
-- `--span` — Span for recurring events: `this` (this occurrence) or `all` (all future). Default: `this`
+An event identifier may change after a recurrence edit. Re-list the range when a later lookup reports that the event was not found.
 
-**JSON output:**
-```json
-{
-  "deleted": true,
-  "event": { ... }
-}
-```
+Alert offsets use `s`, `m`, `h`, `d`, or `w`, such as `30s`, `15m`, `1h`, `1d`, or `1w`, and describe time **before** the event.
 
-## Common Agent Workflows
+## JSON output
 
-### Find and reschedule an event
+`list-calendars` returns an array with these fields:
 
-```bash
-# 1. List events to find the one to reschedule
-apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-28 --json
+| Field | Type |
+| --- | --- |
+| `identifier`, `title`, `type`, `source`, `color` | string |
+| `isImmutable` | boolean |
 
-# 2. Get full details
-apple-calendar-cli get-event EVENT-ID --json
+`list-events` returns an array of event objects. `get-event`, `create-event`, and `update-event` return one event object:
 
-# 3. Update the time
-apple-calendar-cli update-event EVENT-ID \
-  --start "2026-02-24T14:00:00" \
-  --end "2026-02-24T15:00:00" \
-  --json
-```
+| Field | Type |
+| --- | --- |
+| `identifier`, `title`, `startDate`, `endDate` | string |
+| `calendarTitle`, `calendarIdentifier` | string |
+| `isAllDay`, `hasRecurrenceRules`, `hasAlarms` | boolean |
+| `location`, `notes`, `url` | optional string |
+| `recurrenceRules` | optional array of recurrence rules |
+| `attendees` | optional array of participants |
+| `alarms` | optional array of alarms |
 
-### Create an event on a specific calendar
+Optional properties are omitted when unavailable; do not assume they exist or contain `null`.
 
-```bash
-# 1. List calendars to find the right one
-apple-calendar-cli list-calendars --json
+- Recurrence rule: `frequency` (string), `interval` (integer), optional `endDate` (string) or `occurrenceCount` (integer).
+- Participant: optional `name` and `email` (strings), `status` and `role` (strings).
+- Alarm: `relativeOffset` (seconds, usually negative), `offsetDescription` (string).
+- Deletion: `{ "deleted": true, "event": <the event object before deletion> }`.
+- Skill setup: an array of `{ "agent": <agent key>, "path": <SKILL.md path>, "action": <result> }`, with optional `backup` or `error`. Results are `installed`, `updated`, `unchanged`, `would-install`, `would-update`, or `failed`.
 
-# 2. Create the event on that calendar
-apple-calendar-cli create-event \
-  --title "Dentist" \
-  --start "2026-02-25T09:00:00" \
-  --end "2026-02-25T10:00:00" \
-  --calendar CALENDAR-ID \
-  --json
-```
+Treat a nonzero exit status as failure, even with `--json`. Errors are not guaranteed to be JSON. If skill installation partially fails, successful targets remain installed and the JSON results identify the failed targets.
 
-### Check today's schedule
+## Workflow: find and reschedule
 
-```bash
-apple-calendar-cli list-events --from 2026-02-22 --to 2026-02-22 --json
-```
-
-## Error Handling
-
-- **Calendar access denied**: User needs to grant access in System Settings > Privacy & Security > Calendars
-- **Event not found**: The event ID may be stale — list events again to get current IDs
-- **Invalid date format**: Use ISO 8601 (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS`)
-- **End before start**: Ensure the end date/time is after the start date/time
+1. List a narrow date range with `list-events --json`; add `--calendar` when known.
+2. Match the title and time, then use `get-event` if more detail is needed. Resolve multiple matches with the user.
+3. Update the chosen identifier with both new start and end, and the intended `--span` for recurring events.
+4. Report the resulting date, time, timezone, and calendar from the returned event rather than assuming the change succeeded.
