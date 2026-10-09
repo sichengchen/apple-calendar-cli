@@ -150,6 +150,14 @@ apple-calendar-cli update-event EVENT-ID \
 
 # Recurring event — update all future occurrences
 apple-calendar-cli update-event EVENT-ID --title "Updated" --span all --json
+
+# Replace recurrence with every 2 weeks, ending after 10 occurrences
+apple-calendar-cli update-event EVENT-ID \
+  --recurrence weekly \
+  --interval 2 \
+  --recurrence-count 10 \
+  --span all \
+  --json
 ```
 
 **Required argument:**
@@ -170,6 +178,14 @@ apple-calendar-cli update-event EVENT-ID --title "Updated" --span all --json
 - `--recurrence-count` — Number of occurrences for recurrence
 - `--alert` — Add an alert offset before event (e.g., `15m`, `1h`, `1d`)
 - `--remove-alerts` — Remove all existing alerts
+
+`--interval`, `--recurrence-end`, and `--recurrence-count` only apply when setting
+`--recurrence` to a frequency; otherwise they are ignored. Setting a frequency
+replaces the existing recurrence rules. Omitted settings are not preserved:
+the interval defaults to `1`, and omitting both end options makes recurrence
+repeat indefinitely. Include the desired interval and end condition when
+replacing a rule. If both end options are supplied, `--recurrence-end` takes
+precedence over `--recurrence-count`.
 
 **JSON output** — the updated event object.
 
