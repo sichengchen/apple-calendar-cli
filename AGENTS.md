@@ -29,11 +29,7 @@ Name test files `<Type>Tests.swift` and test methods `test<Behavior>`. Cover inv
 
 ## Commit & Pull Request Guidelines
 
-Use Conventional Commits, matching history: `feat:`, `fix:`, `docs:`, or `ci:`. Commit coherent units separately and include this trailer:
-
-```text
-Co-Authored-By: Sicheng Chen (bot) <gh-bot@scchan.com>
-```
+Use Conventional Commits, matching history: `feat:`, `fix:`, `docs:`, or `ci:`. Commit coherent units separately.
 
 PRs should explain the behavior change, link relevant issues, and list verification results. Include CLI output examples for user-visible changes.
 
