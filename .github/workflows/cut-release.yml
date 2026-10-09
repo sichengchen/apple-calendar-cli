@@ -1,0 +1,229 @@
+name: Cut release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic version part to bump for this release
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+        required: true
+        type: choice
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  bump:
+    name: Bump release version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+      sha: ${{ steps.version.outputs.sha }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Validate publishing secret
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$TAP_GITHUB_TOKEN" ]]; then
+            echo "Required repository secret TAP_GITHUB_TOKEN is not configured" >&2
+            exit 1
+          fi
+
+      - name: Bump and push release version
+        id: version
+        env:
+          INPUT_BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          release_version="$(python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          path = Path("Sources/apple-calendar-cli/AppleCalendarCLI.swift")
+          source = path.read_text()
+          component = r"(0|[1-9][0-9]*)"
+          pattern = rf'version: "{component}\.{component}\.{component}"'
+          matches = list(re.finditer(pattern, source))
+          if len(matches) != 1:
+              raise SystemExit("Expected exactly one semantic version in CLI configuration")
+          match = matches[0]
+          parts = list(map(int, match.groups()))
+          bump = os.environ["INPUT_BUMP"]
+          if bump not in ("major", "minor", "patch"):
+              raise SystemExit(f"Invalid version bump: {bump}")
+          index = ("major", "minor", "patch").index(bump)
+          parts[index] += 1
+          parts[index + 1:] = [0] * (2 - index)
+          version = ".".join(map(str, parts))
+          tag = f"v{version}"
+          result = subprocess.run(["git", "show-ref", "--verify", "--quiet", f"refs/tags/{tag}"])
+          if result.returncode == 0:
+              raise SystemExit(f"Tag {tag} already exists")
+          if result.returncode != 1:
+              raise SystemExit("Unable to check existing release tags")
+          path.write_text(source[:match.start()] + f'version: "{version}"' + source[match.end():])
+          print(version)
+          PY
+          )"
+          tag="v${release_version}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Sources/apple-calendar-cli/AppleCalendarCLI.swift
+          git commit -m "release: prepare ${tag}" \
+            -m "Co-Authored-By: Sicheng Chen (bot) <gh-bot@scchan.com>"
+          git push origin HEAD:main
+
+          {
+            echo "release=${release_version}"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "tag=${tag}"
+          } >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Build and publish
+    needs: bump
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      RELEASE_VERSION: ${{ needs.bump.outputs.release }}
+      RELEASE_TAG: ${{ needs.bump.outputs.tag }}
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.bump.outputs.sha }}
+
+      - name: Test
+        run: swift test
+
+      - name: Build release binary
+        run: make release
+
+      - name: Package and smoke test release binary
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp .build/release/apple-calendar-cli dist/
+          bash scripts/verify-permissions.sh dist/apple-calendar-cli
+          actual_version="$(dist/apple-calendar-cli --version)"
+          if [[ "$actual_version" != "$RELEASE_VERSION" ]]; then
+            echo "Expected version $RELEASE_VERSION, got $actual_version" >&2
+            exit 1
+          fi
+          dist/apple-calendar-cli --help
+          dist/apple-calendar-cli help init
+          dist/apple-calendar-cli init --agent codex --dry-run --json
+          tar -czf "dist/apple-calendar-cli-${RELEASE_TAG}-macos-arm64.tar.gz" \
+            -C dist apple-calendar-cli
+
+      - name: Create and push release tag
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # A failed publishing step can be retried against the same release commit.
+          git fetch origin --tags
+          if git show-ref --verify --quiet "refs/tags/${RELEASE_TAG}"; then
+            test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$(git rev-parse HEAD)"
+          else
+            git tag --annotate "$RELEASE_TAG" --message "apple-calendar-cli ${RELEASE_TAG}"
+            git push origin "refs/tags/${RELEASE_TAG}"
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          archive="dist/apple-calendar-cli-${RELEASE_TAG}-macos-arm64.tar.gz"
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$archive" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$archive" --generate-notes \
+              --title "apple-calendar-cli ${RELEASE_TAG}" --verify-tag
+          fi
+
+      - name: Compute SHA256 of source archive
+        id: sha
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/source.tar.gz" \
+            "https://github.com/${RELEASE_REPOSITORY}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+          sha256="$(shasum -a 256 "$RUNNER_TEMP/source.tar.gz" | awk '{print $1}')"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out Homebrew tap
+        uses: actions/checkout@v6
+        with:
+          path: homebrew-tap
+          repository: sichengchen/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+
+      - name: Update and push Homebrew formula
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA256: ${{ steps.sha.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p homebrew-tap/Formula
+          cat > homebrew-tap/Formula/apple-calendar-cli.rb <<FORMULA
+          class AppleCalendarCli < Formula
+            desc "Command-line tool for Apple Calendar operations via EventKit"
+            homepage "https://github.com/${RELEASE_REPOSITORY}"
+            url "https://github.com/${RELEASE_REPOSITORY}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+            sha256 "${SOURCE_SHA256}"
+            license "MIT"
+
+            depends_on macos: :sonoma
+            depends_on xcode: ["16.0", :build]
+
+            def install
+              system "swift", "build", "-c", "release", "--disable-sandbox"
+              system "codesign", "--force", "--sign", "-", ".build/release/apple-calendar-cli"
+              bin.install ".build/release/apple-calendar-cli"
+            end
+
+            test do
+              assert_equal "${RELEASE_VERSION}", shell_output("#{bin}/apple-calendar-cli --version").strip
+              system "codesign", "--verify", "--strict", "-R",
+                     '=identifier "com.scchan.apple-calendar-cli"', bin/"apple-calendar-cli"
+            end
+          end
+          FORMULA
+
+          ruby -c homebrew-tap/Formula/apple-calendar-cli.rb
+          git -C homebrew-tap config user.name "github-actions[bot]"
+          git -C homebrew-tap config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C homebrew-tap add Formula/apple-calendar-cli.rb
+          if ! git -C homebrew-tap diff --cached --quiet; then
+            git -C homebrew-tap commit -m "chore: update apple-calendar-cli to ${RELEASE_TAG}" \
+              -m "Co-Authored-By: Sicheng Chen (bot) <gh-bot@scchan.com>"
+            git -C homebrew-tap push origin HEAD:main
+          fi

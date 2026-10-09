@@ -1,10 +1,19 @@
 // swift-tools-version: 6.0
 
+import Foundation
 import PackageDescription
+
+let infoPlistPath = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .appendingPathComponent("Info.plist")
+    .path
 
 let package = Package(
     name: "apple-calendar-cli",
     platforms: [.macOS(.v14)],
+    products: [
+        .executable(name: "apple-calendar-cli", targets: ["apple-calendar-cli"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.5.0"),
     ],
@@ -16,6 +25,16 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("EventKit"),
+                // A standalone CLI needs its privacy usage strings embedded in the Mach-O binary.
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", infoPlistPath,
+                ]),
+            ],
+            plugins: [
+                .plugin(name: "EmbedSkillPlugin"),
             ]
         ),
         .testTarget(
@@ -25,5 +44,7 @@ let package = Package(
                 .linkedFramework("EventKit"),
             ]
         ),
+        .executableTarget(name: "EmbedSkill", path: "Tools/EmbedSkill"),
+        .plugin(name: "EmbedSkillPlugin", capability: .buildTool(), dependencies: ["EmbedSkill"]),
     ]
 )

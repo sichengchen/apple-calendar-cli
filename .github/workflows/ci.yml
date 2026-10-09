@@ -19,4 +19,7 @@ jobs:
         run: swift test
 
       - name: Build release
-        run: swift build -c release
+        run: make release
+
+      - name: Verify Calendar permission metadata
+        run: bash scripts/verify-permissions.sh .build/release/apple-calendar-cli
