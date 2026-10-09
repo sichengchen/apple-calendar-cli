@@ -136,6 +136,8 @@ jobs:
             exit 1
           fi
           dist/apple-calendar-cli --help
+          dist/apple-calendar-cli help init
+          dist/apple-calendar-cli init --agent codex --dry-run --json
           tar -czf "dist/apple-calendar-cli-${RELEASE_TAG}-macos-arm64.tar.gz" \
             -C dist apple-calendar-cli
 

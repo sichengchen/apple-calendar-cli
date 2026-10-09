@@ -57,6 +57,8 @@ Optional: `--calendar`, `--notes`, `--location`, `--all-day`, `--url`, `--alert`
 
 Without `--calendar`, the default calendar receives the event. Use `list-calendars` to identify the requested destination.
 
+Creating an event is not idempotent. If a create command's outcome is uncertain, list the intended time range before retrying to avoid a duplicate.
+
 `--attendees` takes comma-separated emails and appends them to the event's **notes**. It does not add EventKit participants or send invitations. Do not describe an event created with this flag as an invitation.
 
 ## Update events

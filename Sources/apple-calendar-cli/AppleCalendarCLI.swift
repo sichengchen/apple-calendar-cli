@@ -12,6 +12,7 @@ struct AppleCalendarCLI: AsyncParsableCommand {
         abstract: "A command-line tool for Apple Calendar operations via EventKit.",
         version: "0.1.1",
         subcommands: [
+            InitCommand.self,
             ListCalendarsCommand.self,
             ListEventsCommand.self,
             GetEventCommand.self,
