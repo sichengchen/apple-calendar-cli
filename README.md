@@ -124,6 +124,20 @@ apple-calendar-cli delete-event EVENT-ID --span all
 
 On first run, macOS will prompt for calendar access. If denied, grant access in **System Settings > Privacy & Security > Calendars**.
 
+## Releases
+
+Run **Cut release** in GitHub Actions on `main` and choose `patch`, `minor`, or `major`. With the GitHub CLI installed and authenticated, you can also run:
+
+```bash
+./scripts/release.sh patch
+```
+
+The workflow bumps the CLI version on `main`, tests and builds that exact commit on macOS, smoke tests the binary, then creates a `vX.Y.Z` tag and GitHub release with an ARM64 tarball and generated release notes. It also updates the source-based formula in `sichengchen/homebrew-tap`.
+
+Configure the repository secret `TAP_GITHUB_TOKEN` with write access to `sichengchen/homebrew-tap`. The workflow's `GITHUB_TOKEN` must be allowed to push commits to `main` and create release tags. Missing tap credentials stop the workflow before the version changes.
+
+If publishing fails, use **Re-run failed jobs** to retry the same release commit. Starting a new workflow run bumps the version again. Pushing a tag manually no longer publishes a release.
+
 ## License
 
 MIT
