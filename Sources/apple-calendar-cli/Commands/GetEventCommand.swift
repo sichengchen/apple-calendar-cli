@@ -12,13 +12,24 @@ struct GetEventCommand: AsyncParsableCommand {
     @Argument(help: "The event identifier.")
     var id: String
 
+    @Option(
+        name: .long,
+        help: "Recurring events: which occurrence, by its occurrenceDate from list-events. Default: the first."
+    )
+    var occurrence: String?
+
     func run() async throws {
+        let occurrenceDate = try OccurrenceResolver.parseOccurrence(occurrence)
+
         let service = CalendarService()
         try await service.requestAccess()
 
-        guard let event = service.event(withIdentifier: id) else {
-            throw CalendarServiceError.eventNotFound(id)
-        }
+        // Reading is harmless, so without --occurrence a recurring event resolves to its first occurrence.
+        let event = try service.targetEvent(
+            identifier: id,
+            occurrence: occurrenceDate,
+            span: occurrenceDate == nil ? .all : .this
+        )
 
         let eventInfo = EventInfo(from: event)
 
