@@ -72,7 +72,7 @@ apple-calendar-cli update-event EVENT-ID \
   --json
 ```
 
-Only supplied fields change. Accepted fields: `--title`, `--start`, `--end`, `--calendar`, `--notes`, `--location`, `--url`, `--recurrence`, `--interval`, `--recurrence-end`, `--recurrence-count`, `--alert`, `--remove-alerts`, `--span`.
+Only supplied fields change. Accepted fields: `--title`, `--start`, `--end`, `--calendar`, `--notes`, `--location`, `--url`, `--recurrence`, `--interval`, `--recurrence-end`, `--recurrence-count`, `--alert`, `--remove-alerts`, `--span`, `--occurrence`.
 
 For a time shift, provide both start and end to preserve the desired duration; changing start alone leaves the old end in place. Updating supports neither `--all-day` nor `--attendees`.
 
@@ -88,13 +88,23 @@ Create or replace recurrence with `--recurrence daily|weekly|monthly|yearly`. `-
 
 On update, `--recurrence` replaces all existing recurrence rules. Omitted recurrence settings are not preserved: the interval resets to `1`, and omitting both end conditions makes the new series indefinite. `--interval`, `--recurrence-end`, and `--recurrence-count` have no effect without a frequency in `--recurrence`. Use `--recurrence none` on update to remove recurrence.
 
-`--span this` is the default for update and delete: it affects the addressed occurrence. `--span all` means **this and future occurrences**, not past occurrences. Choose the intended occurrence and scope before applying a series change.
+All occurrences of a recurring event share one identifier. Address one with `--occurrence`, set to that occurrence's `occurrenceDate` from `list-events --json` (its original start; a moved occurrence's current `startDate` also works). Choose the scope with `--span`:
+
+- `this` (default): only the addressed occurrence. Requires `--occurrence`.
+- `future`: the addressed occurrence and every later one. Requires `--occurrence`.
+- `all`: the whole series, including past occurrences. Don't pass `--occurrence` with it.
+
+Update or delete of a recurring event with `this` or `future` and no `--occurrence` fails instead of touching the first occurrence. Confirm the occurrence and scope with the user before a series change.
 
 ```bash
+apple-calendar-cli update-event EVENT-ID --occurrence "2026-10-13T11:00:00" \
+  --start "2026-10-13T12:00:00" --end "2026-10-13T12:30:00" --json
+
 apple-calendar-cli update-event EVENT-ID \
   --recurrence weekly --interval 2 --recurrence-count 10 --span all --json
 
-apple-calendar-cli delete-event EVENT-ID --json
+apple-calendar-cli delete-event EVENT-ID --occurrence "2026-10-13T11:00:00" --json
+apple-calendar-cli delete-event EVENT-ID --occurrence "2026-10-13T11:00:00" --span future --json
 apple-calendar-cli delete-event EVENT-ID --span all --json
 ```
 
@@ -119,6 +129,7 @@ Alert offsets use `s`, `m`, `h`, `d`, or `w`, such as `30s`, `15m`, `1h`, `1d`, 
 | `calendarTitle`, `calendarIdentifier` | string |
 | `isAllDay`, `hasRecurrenceRules`, `hasAlarms` | boolean |
 | `location`, `notes`, `url` | optional string |
+| `occurrenceDate` | optional string; recurring events only — pass it as `--occurrence` |
 | `recurrenceRules` | optional array of recurrence rules |
 | `attendees` | optional array of participants |
 | `alarms` | optional array of alarms |
@@ -137,5 +148,5 @@ Treat a nonzero exit status as failure, even with `--json`. Errors are not guara
 
 1. List a narrow date range with `list-events --json`; add `--calendar` when known.
 2. Match the title and time, then use `get-event` if more detail is needed. Resolve multiple matches with the user.
-3. Update the chosen identifier with both new start and end, and the intended `--span` for recurring events.
+3. Update the chosen identifier with both new start and end. For a recurring event, also pass its `occurrenceDate` as `--occurrence` and the intended `--span`.
 4. Report the resulting date, time, timezone, and calendar from the returned event rather than assuming the change succeeded.

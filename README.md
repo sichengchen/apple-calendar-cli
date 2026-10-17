@@ -94,7 +94,14 @@ apple-calendar-cli update-event EVENT-ID \
   --end "2026-02-24T15:00:00" \
   --location "Room B"
 
-# Recurring event — update all future occurrences
+# Recurring event — one occurrence, by the occurrenceDate shown in list-events --json
+apple-calendar-cli update-event EVENT-ID --occurrence "2026-03-09T09:00:00" \
+  --start "2026-03-09T10:00:00" --end "2026-03-09T11:00:00"
+
+# Recurring event — this occurrence and all later ones
+apple-calendar-cli update-event EVENT-ID --occurrence "2026-03-09T09:00:00" --location "Room B" --span future
+
+# Recurring event — the whole series
 apple-calendar-cli update-event EVENT-ID --title "Updated" --span all
 ```
 
@@ -103,9 +110,22 @@ apple-calendar-cli update-event EVENT-ID --title "Updated" --span all
 ```bash
 apple-calendar-cli delete-event EVENT-ID
 
+# Delete one occurrence of a recurring event
+apple-calendar-cli delete-event EVENT-ID --occurrence "2026-03-09T09:00:00"
+
 # Delete all occurrences of a recurring event
 apple-calendar-cli delete-event EVENT-ID --span all
 ```
+
+### Recurring events
+
+Every occurrence of a recurring event shares one identifier, so `update-event`, `delete-event` and `get-event` take `--occurrence` to say which one. Its value is the occurrence's `occurrenceDate` (its original start) from `list-events --json`; the current `startDate` of a moved occurrence also works.
+
+- `--span this` (default): only that occurrence. Requires `--occurrence`.
+- `--span future`: that occurrence and every later one. Requires `--occurrence`.
+- `--span all`: the whole series. Don't pass `--occurrence` with it.
+
+Changing or deleting a recurring event with `--span this` or `future` but no `--occurrence` is an error rather than a change to the series' first occurrence. `get-event` without `--occurrence` returns the first occurrence.
 
 ## Date formats
 
