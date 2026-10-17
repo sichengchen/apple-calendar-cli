@@ -127,6 +127,8 @@ Every occurrence of a recurring event shares one identifier, so `update-event`, 
 
 Changing or deleting a recurring event with `--span this` or `future` but no `--occurrence` is an error rather than a change to the series' first occurrence. `get-event` without `--occurrence` returns the first occurrence.
 
+A moved or edited occurrence gets its own identifier, `<series identifier>/RID=<n>`, which can be used directly in place of the series identifier plus `--occurrence`. A `future` change splits the series, so later occurrences get a new identifier; re-list before addressing them again. A `future` delete also removes later occurrences that an earlier `future` edit split off (EventKit behaviour).
+
 ## Date formats
 
 - Date only: `YYYY-MM-DD` (start of day, local timezone)

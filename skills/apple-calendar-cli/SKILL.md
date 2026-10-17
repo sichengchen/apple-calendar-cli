@@ -96,6 +96,8 @@ All occurrences of a recurring event share one identifier. Address one with `--o
 
 Update or delete of a recurring event with `this` or `future` and no `--occurrence` fails instead of touching the first occurrence. Confirm the occurrence and scope with the user before a series change.
 
+A moved or edited occurrence has its own identifier, `<series identifier>/RID=<n>`; it can be passed without `--occurrence`. A `future` change splits the series and gives the later occurrences a new identifier, so re-list before the next change. A `future` delete also removes later occurrences that an earlier `future` edit split off (EventKit behaviour): list the range first and check what will go.
+
 ```bash
 apple-calendar-cli update-event EVENT-ID --occurrence "2026-10-13T11:00:00" \
   --start "2026-10-13T12:00:00" --end "2026-10-13T12:30:00" --json
