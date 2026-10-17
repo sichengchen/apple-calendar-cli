@@ -24,11 +24,13 @@ struct GetEventCommand: AsyncParsableCommand {
         let service = CalendarService()
         try await service.requestAccess()
 
-        // Reading is harmless, so without --occurrence a recurring event resolves to its first occurrence.
+        // Reading is harmless, so a series identifier without --occurrence resolves to its first occurrence;
+        // an occurrence-specific identifier (`<series>/RID=<n>`) resolves to that occurrence.
+        let namesOccurrence = occurrenceDate != nil || OccurrenceResolver.split(id).originalDate != nil
         let event = try service.targetEvent(
             identifier: id,
             occurrence: occurrenceDate,
-            span: occurrenceDate == nil ? .all : .this
+            span: namesOccurrence ? .this : .all
         )
 
         let eventInfo = EventInfo(from: event)

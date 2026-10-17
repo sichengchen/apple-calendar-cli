@@ -76,6 +76,40 @@ final class OccurrenceResolverTests: XCTestCase {
         )
     }
 
+    func testSplitOccurrenceSpecificIdentifier() {
+        // 816472800 s after 2001-01-01 UTC is 2026-11-15T22:00:00Z.
+        let parts = OccurrenceResolver.split("CAL:SERIES/RID=816472800")
+        XCTAssertEqual(parts.series, "CAL:SERIES")
+        XCTAssertEqual(parts.originalDate, date("2026-11-15T22:00:00Z"))
+
+        let plain = OccurrenceResolver.split("CAL:SERIES")
+        XCTAssertEqual(plain.series, "CAL:SERIES")
+        XCTAssertNil(plain.originalDate)
+        XCTAssertNil(OccurrenceResolver.split("CAL:SERIES/RID=abc").originalDate)
+    }
+
+    func testMatchFindsMovedOccurrenceWithItsOwnIdentifier() {
+        // A moved occurrence gets "<series>/RID=<original start>" and EventKit reports its new start
+        // as occurrenceDate, so the original date has to come from the identifier.
+        let original = date("2026-11-15T22:00:00Z")
+        let moved = date("2026-11-16T00:00:00Z")
+        let rid = Int(original.timeIntervalSinceReferenceDate)
+        var candidates = weeklySeries(id: "CAL:SERIES")
+        candidates.append(Candidate(identifier: "CAL:SERIES/RID=\(rid)", occurrenceDate: moved, startDate: moved))
+        XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES", date: original), 3)
+        XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES", date: moved), 3)
+        XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES/RID=\(rid)", date: original), 3)
+    }
+
+    func testOriginalDatePrefersTheIdentifier() {
+        let reported = date("2026-11-16T00:00:00Z")
+        XCTAssertEqual(
+            OccurrenceResolver.originalDate(identifier: "CAL:SERIES/RID=816472800", occurrenceDate: reported),
+            date("2026-11-15T22:00:00Z")
+        )
+        XCTAssertEqual(OccurrenceResolver.originalDate(identifier: "CAL:SERIES", occurrenceDate: reported), reported)
+    }
+
     func testMatchAllDayOccurrenceByDateOnly() {
         let candidates = ["2026-03-02", "2026-03-09"].map {
             Candidate(identifier: "ALLDAY", occurrenceDate: date($0), startDate: date($0))

@@ -40,17 +40,39 @@ enum OccurrenceResolver {
     /// How far either side of `--occurrence` to search; wide enough to find an occurrence that was moved.
     static let searchWindow: TimeInterval = 7 * 24 * 60 * 60
 
-    /// Index of the occurrence of `identifier` whose original start is `date`, or failing that, the
-    /// one that now starts at `date` (a moved occurrence addressed by its new start).
+    /// Splits an occurrence-specific identifier. A moved or edited occurrence gets its own identifier,
+    /// `<series identifier>/RID=<n>`, where `n` is its original start in seconds since 2001-01-01 UTC
+    /// (EventKit's reference date). Any other identifier is returned unchanged with no date.
+    static func split(_ identifier: String) -> (series: String, originalDate: Date?) {
+        guard let range = identifier.range(of: "/RID=", options: .backwards),
+              let seconds = Double(identifier[range.upperBound...]) else {
+            return (identifier, nil)
+        }
+        return (String(identifier[..<range.lowerBound]), Date(timeIntervalSinceReferenceDate: seconds))
+    }
+
+    /// The original start of an occurrence. For a moved occurrence EventKit reports the new start as
+    /// `occurrenceDate`, so the date encoded in its identifier wins.
+    static func originalDate(identifier: String, occurrenceDate: Date?) -> Date? {
+        split(identifier).originalDate ?? occurrenceDate
+    }
+
+    /// Index of the occurrence of series `identifier` whose original start is `date`, or failing that,
+    /// the one that now starts at `date` (a moved occurrence addressed by its new start).
     static func match(_ candidates: [Candidate], identifier: String, date: Date) -> Int? {
         func same(_ lhs: Date?, _ rhs: Date) -> Bool {
             guard let lhs else { return false }
             return abs(lhs.timeIntervalSince(rhs)) < 1
         }
-        if let index = candidates.firstIndex(where: { $0.identifier == identifier && same($0.occurrenceDate, date) }) {
+        let series = split(identifier).series
+        let members = candidates.indices.filter { split(candidates[$0].identifier).series == series }
+        if let index = members.first(where: {
+            let candidate = candidates[$0]
+            return same(originalDate(identifier: candidate.identifier, occurrenceDate: candidate.occurrenceDate), date)
+        }) {
             return index
         }
-        return candidates.firstIndex(where: { $0.identifier == identifier && same($0.startDate, date) })
+        return members.first(where: { same(candidates[$0].startDate, date) })
     }
 
     /// Parses `--occurrence`; nil when it was not given.

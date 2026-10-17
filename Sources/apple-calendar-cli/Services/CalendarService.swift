@@ -72,7 +72,11 @@ struct CalendarService: @unchecked Sendable {
     /// resolves to the event itself (for a series, its first occurrence). Otherwise `occurrence` must
     /// name one occurrence, so a later occurrence is never silently replaced by the first.
     func targetEvent(identifier: String, occurrence: Date?, span: EventSpan) throws -> EKEvent {
-        guard let event = store.event(withIdentifier: identifier) else {
+        // An occurrence-specific identifier (`<series>/RID=<n>`) already names one occurrence: act on its
+        // series, at that occurrence unless --occurrence says otherwise.
+        let (series, encodedDate) = OccurrenceResolver.split(identifier)
+        let occurrence = occurrence ?? encodedDate
+        guard let event = store.event(withIdentifier: series) ?? store.event(withIdentifier: identifier) else {
             throw CalendarServiceError.eventNotFound(identifier)
         }
         let isRecurring = event.hasRecurrenceRules || event.isDetached
@@ -98,7 +102,7 @@ struct CalendarService: @unchecked Sendable {
                 startDate: $0.startDate
             )
         }
-        guard let index = OccurrenceResolver.match(candidates, identifier: identifier, date: occurrence) else {
+        guard let index = OccurrenceResolver.match(candidates, identifier: series, date: occurrence) else {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
             formatter.timeZone = .current

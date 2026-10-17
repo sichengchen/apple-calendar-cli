@@ -37,7 +37,10 @@ struct EventInfo: Codable {
         } else {
             self.recurrenceRules = nil
         }
-        if event.hasRecurrenceRules || event.isDetached, let occurrence = event.occurrenceDate {
+        if event.hasRecurrenceRules || event.isDetached,
+           let occurrence = OccurrenceResolver.originalDate(
+               identifier: event.eventIdentifier ?? "", occurrenceDate: event.occurrenceDate
+           ) {
             self.occurrenceDate = Self.formatter.string(from: occurrence)
         } else {
             self.occurrenceDate = nil
