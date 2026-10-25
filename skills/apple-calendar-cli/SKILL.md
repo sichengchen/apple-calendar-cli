@@ -88,7 +88,7 @@ Create or replace recurrence with `--recurrence daily|weekly|monthly|yearly`. `-
 
 On update, `--recurrence` replaces all existing recurrence rules. Omitted recurrence settings are not preserved: the interval resets to `1`, and omitting both end conditions makes the new series indefinite. `--interval`, `--recurrence-end`, and `--recurrence-count` have no effect without a frequency in `--recurrence`. Use `--recurrence none` on update to remove recurrence.
 
-All occurrences of a recurring event share one identifier. Address one with `--occurrence`, set to that occurrence's `occurrenceDate` from `list-events --json` (its original start; a moved occurrence's current `startDate` also works). Choose the scope with `--span`:
+All occurrences of a recurring event share one identifier. Address one with `--occurrence`, set to that occurrence's `occurrenceDate` from `list-events --json` (its original start, even if the occurrence has moved). Choose the scope with `--span`:
 
 - `this` (default): only the addressed occurrence. Requires `--occurrence`.
 - `future`: the addressed occurrence and every later one. Requires `--occurrence`.
@@ -96,7 +96,7 @@ All occurrences of a recurring event share one identifier. Address one with `--o
 
 Update or delete of a recurring event with `this` or `future` and no `--occurrence` fails instead of touching the first occurrence. Confirm the occurrence and scope with the user before a series change.
 
-A moved or edited occurrence has its own identifier, `<series identifier>/RID=<n>`; it can be passed without `--occurrence`. A `future` change splits the series and gives the later occurrences a new identifier, so re-list before the next change. A `future` delete also removes later occurrences that an earlier `future` edit split off (EventKit behaviour): list the range first and check what will go.
+A moved or edited occurrence has its own identifier, `<series identifier>/RID=<n>`; it can be passed without `--occurrence`, regardless of how far it moved. With an exact identifier, an optional `--occurrence` must match its original or current start. If original-date lookup fails for a moved occurrence, use its exact identifier from `list-events --json`; do not substitute its current start with a series identifier. A `future` change splits the series and gives the later occurrences a new identifier, so re-list before the next change. A `future` delete also removes later occurrences that an earlier `future` edit split off (EventKit behaviour): list the range first and check what will go.
 
 ```bash
 apple-calendar-cli update-event EVENT-ID --occurrence "2026-10-13T11:00:00" \

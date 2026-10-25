@@ -35,9 +35,10 @@ enum OccurrenceResolver {
         let identifier: String
         let occurrenceDate: Date?
         let startDate: Date
+        var isRecurring = true
     }
 
-    /// How far either side of `--occurrence` to search; wide enough to find an occurrence that was moved.
+    /// Range for finding unmodified occurrences; detached occurrences are looked up by identifier.
     static let searchWindow: TimeInterval = 7 * 24 * 60 * 60
 
     /// Splits an occurrence-specific identifier. A moved or edited occurrence gets its own identifier,
@@ -57,22 +58,84 @@ enum OccurrenceResolver {
         split(identifier).originalDate ?? occurrenceDate
     }
 
-    /// Index of the occurrence of series `identifier` whose original start is `date`, or failing that,
-    /// the one that now starts at `date` (a moved occurrence addressed by its new start).
+    /// Index of the occurrence whose original start is `date`. Current starts can name a different
+    /// occurrence after moves, so they must never be used as a fallback for a series identifier.
     static func match(_ candidates: [Candidate], identifier: String, date: Date) -> Int? {
-        func same(_ lhs: Date?, _ rhs: Date) -> Bool {
-            guard let lhs else { return false }
-            return abs(lhs.timeIntervalSince(rhs)) < 1
-        }
         let series = split(identifier).series
         let members = candidates.indices.filter { split(candidates[$0].identifier).series == series }
-        if let index = members.first(where: {
+        return members.first(where: {
             let candidate = candidates[$0]
             return same(originalDate(identifier: candidate.identifier, occurrenceDate: candidate.occurrenceDate), date)
-        }) {
-            return index
+        })
+    }
+
+    /// Resolve through the same lookup and date-range operations used by CalendarService. Keeping
+    /// these operations injectable lets tests model a moved occurrence outside the fetched range.
+    static func resolve<Event>(
+        identifier: String,
+        occurrence: Date?,
+        span: EventSpan,
+        lookup: (String) -> Event?,
+        fetch: (Date, Date, Event) -> [Event],
+        describe: (Event) -> Candidate
+    ) throws -> Event {
+        let (series, encodedDate) = split(identifier)
+        if span != .all, encodedDate != nil {
+            // An exact identifier is authoritative. Never replace a missing detached event with
+            // another member of its series, even if that member occupies the same time slot.
+            guard let event = lookup(identifier), describe(event).identifier == identifier else {
+                throw CalendarServiceError.eventNotFound(identifier)
+            }
+            let candidate = describe(event)
+            if let occurrence,
+               !same(originalDate(identifier: identifier, occurrenceDate: candidate.occurrenceDate), occurrence),
+               !same(candidate.startDate, occurrence) {
+                throw notFound(identifier: identifier, date: occurrence)
+            }
+            return event
         }
-        return members.first(where: { same(candidates[$0].startDate, date) })
+
+        guard let event = lookup(series) else {
+            throw CalendarServiceError.eventNotFound(identifier)
+        }
+        let candidate = describe(event)
+        if requiresOccurrence(isRecurring: candidate.isRecurring, span: span, occurrenceGiven: occurrence != nil) {
+            throw CalendarServiceError.occurrenceRequired(identifier)
+        }
+        guard candidate.isRecurring, span != .all, let occurrence else {
+            return event
+        }
+
+        // A detached occurrence may be arbitrarily far from its original slot. Probe its RID
+        // directly, and validate the returned event because providers can interpret IDs differently.
+        let seconds = occurrence.timeIntervalSinceReferenceDate
+        let rid = seconds.rounded() == seconds ? String(format: "%.0f", seconds) : String(seconds)
+        if let detached = lookup("\(series)/RID=\(rid)"),
+           match([describe(detached)], identifier: series, date: occurrence) != nil {
+            return detached
+        }
+
+        let events = fetch(
+            occurrence.addingTimeInterval(-searchWindow),
+            occurrence.addingTimeInterval(searchWindow),
+            event
+        )
+        guard let index = match(events.map(describe), identifier: series, date: occurrence) else {
+            throw notFound(identifier: identifier, date: occurrence)
+        }
+        return events[index]
+    }
+
+    private static func same(_ lhs: Date?, _ rhs: Date) -> Bool {
+        guard let lhs else { return false }
+        return abs(lhs.timeIntervalSince(rhs)) < 1
+    }
+
+    private static func notFound(identifier: String, date: Date) -> CalendarServiceError {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = .current
+        return .occurrenceNotFound(identifier, formatter.string(from: date))
     }
 
     /// Parses `--occurrence`; nil when it was not given.

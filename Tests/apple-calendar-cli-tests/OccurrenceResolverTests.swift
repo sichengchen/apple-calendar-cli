@@ -51,15 +51,15 @@ final class OccurrenceResolverTests: XCTestCase {
         )
     }
 
-    func testMatchFindsMovedOccurrenceByNewStart() {
+    func testMatchDoesNotUseAnotherOccurrencesCurrentStart() {
         var candidates = weeklySeries()
         candidates[1] = Candidate(
             identifier: "SERIES",
             occurrenceDate: date("2026-03-09T09:00:00"),
             startDate: date("2026-03-10T14:00:00")
         )
-        XCTAssertEqual(
-            OccurrenceResolver.match(candidates, identifier: "SERIES", date: date("2026-03-10T14:00:00")), 1
+        XCTAssertNil(
+            OccurrenceResolver.match(candidates, identifier: "SERIES", date: date("2026-03-10T14:00:00"))
         )
     }
 
@@ -97,7 +97,7 @@ final class OccurrenceResolverTests: XCTestCase {
         var candidates = weeklySeries(id: "CAL:SERIES")
         candidates.append(Candidate(identifier: "CAL:SERIES/RID=\(rid)", occurrenceDate: moved, startDate: moved))
         XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES", date: original), 3)
-        XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES", date: moved), 3)
+        XCTAssertNil(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES", date: moved))
         XCTAssertEqual(OccurrenceResolver.match(candidates, identifier: "CAL:SERIES/RID=\(rid)", date: original), 3)
     }
 

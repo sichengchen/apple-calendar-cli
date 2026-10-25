@@ -27,7 +27,7 @@ enum CalendarServiceError: LocalizedError {
         case .occurrenceNotFound(let identifier, let date):
             return """
                 No occurrence of event \(identifier) at \(date). \
-                Use the occurrenceDate or startDate shown by list-events.
+                Use the occurrenceDate shown by list-events, or pass the exact occurrence identifier.
                 """
         }
     }
@@ -72,43 +72,23 @@ struct CalendarService: @unchecked Sendable {
     /// resolves to the event itself (for a series, its first occurrence). Otherwise `occurrence` must
     /// name one occurrence, so a later occurrence is never silently replaced by the first.
     func targetEvent(identifier: String, occurrence: Date?, span: EventSpan) throws -> EKEvent {
-        // An occurrence-specific identifier (`<series>/RID=<n>`) already names one occurrence: act on its
-        // series, at that occurrence unless --occurrence says otherwise.
-        let (series, encodedDate) = OccurrenceResolver.split(identifier)
-        let occurrence = occurrence ?? encodedDate
-        guard let event = store.event(withIdentifier: series) ?? store.event(withIdentifier: identifier) else {
-            throw CalendarServiceError.eventNotFound(identifier)
-        }
-        let isRecurring = event.hasRecurrenceRules || event.isDetached
-        let needsOccurrence = OccurrenceResolver.requiresOccurrence(
-            isRecurring: isRecurring, span: span, occurrenceGiven: occurrence != nil
+        try OccurrenceResolver.resolve(
+            identifier: identifier,
+            occurrence: occurrence,
+            span: span,
+            lookup: { store.event(withIdentifier: $0) },
+            fetch: { start, end, event in
+                fetchEvents(from: start, to: end, in: event.calendar.map { [$0] })
+            },
+            describe: { event in
+                OccurrenceResolver.Candidate(
+                    identifier: event.eventIdentifier ?? "",
+                    occurrenceDate: event.occurrenceDate,
+                    startDate: event.startDate,
+                    isRecurring: event.hasRecurrenceRules || event.isDetached
+                )
+            }
         )
-        if needsOccurrence {
-            throw CalendarServiceError.occurrenceRequired(identifier)
-        }
-        guard isRecurring, span != .all, let occurrence else {
-            return event
-        }
-        let window = OccurrenceResolver.searchWindow
-        let events = fetchEvents(
-            from: occurrence.addingTimeInterval(-window),
-            to: occurrence.addingTimeInterval(window),
-            in: event.calendar.map { [$0] }
-        )
-        let candidates = events.map {
-            OccurrenceResolver.Candidate(
-                identifier: $0.eventIdentifier ?? "",
-                occurrenceDate: $0.occurrenceDate,
-                startDate: $0.startDate
-            )
-        }
-        guard let index = OccurrenceResolver.match(candidates, identifier: series, date: occurrence) else {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime]
-            formatter.timeZone = .current
-            throw CalendarServiceError.occurrenceNotFound(identifier, formatter.string(from: occurrence))
-        }
-        return events[index]
     }
 
     func save(_ event: EKEvent, span: EKSpan = .thisEvent) throws {
