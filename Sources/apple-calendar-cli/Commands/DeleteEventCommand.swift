@@ -13,30 +13,30 @@ struct DeleteEventCommand: AsyncParsableCommand {
     @Argument(help: "The event identifier.")
     var id: String
 
-    @Option(name: .long, help: "Span for recurring events: 'this' (this occurrence) or 'all' (all future). Default: this.")
+    @Option(
+        name: .long,
+        help: "Recurring events: 'this' occurrence, 'future' (this and later) or 'all' (whole series). Default: this."
+    )
     var span: String?
 
+    @Option(
+        name: .long,
+        help: "Recurring events: which occurrence, by its occurrenceDate from list-events (YYYY-MM-DD or ISO 8601)."
+    )
+    var occurrence: String?
+
     func run() async throws {
+        let eventSpan = try EventSpan.parse(span)
+        let occurrenceDate = try OccurrenceResolver.parseOccurrence(occurrence)
+        try OccurrenceResolver.validate(span: eventSpan, occurrenceGiven: occurrenceDate != nil)
+
         let service = CalendarService()
         try await service.requestAccess()
 
-        guard let event = service.event(withIdentifier: id) else {
-            throw CalendarServiceError.eventNotFound(id)
-        }
-
-        let ekSpan: EKSpan
-        if let span {
-            switch span.lowercased() {
-            case "this": ekSpan = .thisEvent
-            case "all": ekSpan = .futureEvents
-            default: throw ValidationError("Invalid --span value: '\(span)'. Use 'this' or 'all'.")
-            }
-        } else {
-            ekSpan = .thisEvent
-        }
+        let event = try service.targetEvent(identifier: id, occurrence: occurrenceDate, span: eventSpan)
 
         let eventInfo = EventInfo(from: event)
-        try service.delete(event, span: ekSpan)
+        try service.delete(event, span: eventSpan.ekSpan)
 
         if globalOptions.json {
             let result = DeleteResult(deleted: true, event: eventInfo)

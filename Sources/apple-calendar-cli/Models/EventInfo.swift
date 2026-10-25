@@ -14,6 +14,8 @@ struct EventInfo: Codable {
     let url: String?
     let hasRecurrenceRules: Bool
     let recurrenceRules: [RecurrenceRuleInfo]?
+    /// Original start of this occurrence of a recurring event; pass it as `--occurrence`.
+    let occurrenceDate: String?
     let attendees: [AttendeeInfo]?
     let hasAlarms: Bool
     let alarms: [AlarmInfo]?
@@ -34,6 +36,14 @@ struct EventInfo: Codable {
             self.recurrenceRules = rules.map { RecurrenceRuleInfo(from: $0) }
         } else {
             self.recurrenceRules = nil
+        }
+        if event.hasRecurrenceRules || event.isDetached,
+           let occurrence = OccurrenceResolver.originalDate(
+               identifier: event.eventIdentifier ?? "", occurrenceDate: event.occurrenceDate
+           ) {
+            self.occurrenceDate = Self.formatter.string(from: occurrence)
+        } else {
+            self.occurrenceDate = nil
         }
         if let participants = event.attendees, !participants.isEmpty {
             self.attendees = participants.map { AttendeeInfo(from: $0) }
